@@ -7,7 +7,7 @@ from Image import Image
 from PIL import Image as image
 
 substring = ".ini"
-path_to_file = "D:\\S20 Pics"
+path_to_file = "C:\\Users\\Josh\\Pictures\\Saved Pictures"
 images = list()
 duplicates = list()
 
@@ -66,6 +66,24 @@ def identify_duplicate_hashes(images):
             elif new_image.get_hash() == image.get_hash() and new_image.get_image_shape() == image.get_image_shape():
                 print(new_image.get_name())
 
+
+def binary_search_hashes(images, size, query_hash, image_index):
+
+    low = 0
+    high = size - 1
+    while low <= high:
+
+        mid = int(low + (high - low) / 2)
+        if query_hash == images[mid].get_hash() and image_index != mid:
+            return True
+        elif query_hash < images[mid].get_hash():
+            high = mid - 1
+        else:
+            low = mid + 1
+    return False
+
+
+
 #call functions, read images, hash images, identify duplicate hashes/images
 time1 = time()
 
@@ -73,6 +91,7 @@ path_contents = os.listdir(path_to_file)
 read_images(path_contents, path_to_file)
 hash_image(images)
 identify_duplicate_hashes(images)
+#images.sort(key=lambda x: x.get_hash(), reverse=False)
 
 time2 = time()
 time_taken = time2 - time1
