@@ -5,14 +5,15 @@ import sys
 from time import time
 from Image import Image
 from PIL import Image as image
+import vptree
 
 substring = ".ini"
-path_to_file = "D:\\testData"
+path_to_file = "D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\train\\NORMAL"
 images = list()
 
 #read images in from path, convert to mat obejct and store in custom type Image
 def read_images(path_contents, path_to_file):
-
+    print("Reading images...")
     for file_name in path_contents:
         if substring in file_name:
             continue
@@ -33,7 +34,7 @@ def read_images(path_contents, path_to_file):
 #grayscale improves speed, only one channel being examined, resize allows us to identify similar images as we ignore aspect ratio. 
 #9x8 because 9 pixels compared against 8 adjacent pixels renders 8x8 64bit array
 def hash_image(images):
-
+    print("Hashing images")
     for index, image in enumerate(images):
         hashsize = 8
         image_hash = 0
@@ -57,14 +58,16 @@ def hash_image(images):
         image.set_hash(image_hash)
 
 #if hashes & channels/size the same then a duplicate has been found
+#O(n) linear time complexity, very slow
 def identify_duplicate_hashes(images):
-
+    print("Idenitfying duplicates")
     for index, image in enumerate(images):
         for new_index, new_image in enumerate(images):
             if new_index <= index:
                 continue
             elif new_image.get_hash() == image.get_hash() and new_image.get_image_shape() == image.get_image_shape():
                 print(new_image.get_name())
+                print(image.get_name())
 
 #call functions, read images, hash images, identify duplicate hashes/images
 time1 = time()
