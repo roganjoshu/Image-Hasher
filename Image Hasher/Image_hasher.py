@@ -69,6 +69,21 @@ def identify_duplicate_hashes(images):
                 print(new_image.get_name())
                 print(image.get_name())
 
+
+def sort_images(images):
+    images.sort(key=lambda x: x.get_hash(), reverse=True)
+    count = 0
+    
+    for index, image in enumerate(images):
+        if index == len(images) - 1:
+            break
+        elif image.get_hash() >= images[index + 1].get_hash():
+            count += 1
+            print(">= is true")
+
+    print(str(count))
+    print()
+
 #call functions, read images, hash images, identify duplicate hashes/images
 time1 = time()
 
@@ -76,6 +91,7 @@ path_contents = os.listdir(path_to_file)
 read_images(path_contents, path_to_file)
 hash_image(images)
 identify_duplicate_hashes(images)
+sort_images(images)
 
 time2 = time()
 time_taken = time2 - time1
