@@ -8,7 +8,7 @@ from PIL import Image as image
 import vptree
 
 substring = ".ini"
-path_to_file = "D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\train\\NORMAL"
+path_to_file = "D:\S20 Pics"
 images = list()
 
 #read images in from path, convert to mat obejct and store in custom type Image
