@@ -39,18 +39,22 @@ def hash_image(images):
         hashsize = 8
         image_hash = 0
 
-        grayscale = cv.cvtColor(image.get_image(), cv.COLOR_BGR2GRAY)  
+        grayscale = cv.cvtColor(image.get_image(), cv.COLOR_BGR2GRAY)
+        #2D array of ints representing pixel intensity  
         image_resized = cv.resize(grayscale, (hashsize + 1, hashsize))
+        #instantiate 2d matrix 8x8
         m, n = image_resized.shape
         pixel_difference = np.ndarray(shape=(m, n-1), dtype=bool)
 
         for row in range(m):
                 for col in range(n-1):
+                    #if right pixel more intense than left then index = TRUE
                     if image_resized[row, col+1] > image_resized[row, col]:
                         pixel_difference[row,col] = True
                     else:
                         pixel_difference[row,col] = False
         
+        #flatten pixel difference to 1D array, if index is TRUE append image hash with 5^value of the index
         for index, value in enumerate(pixel_difference.flatten()):
                 if value == True:
                     image_hash += 5**index
@@ -74,6 +78,7 @@ def sort_images(images):
     images.sort(key=lambda x: x.get_hash(), reverse=True)
     count = 0
     
+    #just a check to see if images are sorted
     for index, image in enumerate(images):
         if index == len(images) - 1:
             break
@@ -84,14 +89,31 @@ def sort_images(images):
     print(str(count))
     print()
 
+#this needss checking
+def recursive_binary_search(images, low, high, hash_to_check):
+    if low > high:
+        return False
+    mid = int(low + (high - low) / 2)
+
+    if hash_to_check == images[mid].get_hash():
+        return True
+    elif hash_to_check < images[mid].get_hash():
+        return recursive_binary_search(images, low, mid - 1, hash_to_check)
+    else:
+        return recursive_binary_search(images, mid + 1, high, hash_to_check)
+
 #call functions, read images, hash images, identify duplicate hashes/images
 time1 = time()
 
 path_contents = os.listdir(path_to_file)
 read_images(path_contents, path_to_file)
 hash_image(images)
-identify_duplicate_hashes(images)
+#identify_duplicate_hashes(images)
 sort_images(images)
+
+for index, image in enumerate(images):
+    if recursive_binary_search(images, 0, len(images)-1, image.get_hash()):
+        print("duplicate found")
 
 time2 = time()
 time_taken = time2 - time1
