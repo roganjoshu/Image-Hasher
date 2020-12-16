@@ -1,8 +1,7 @@
 class Image:
 
     #constructor
-    def __init__(self, image, image_name, date_created, image_shape):
-        self.image = image
+    def __init__(self, image_name, date_created, image_shape):
         self.image_hash = 0
         self.image_name = image_name
         if date_created != 0:
