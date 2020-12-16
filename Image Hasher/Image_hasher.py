@@ -7,11 +7,16 @@ from Image import Image
 from PIL import Image as image
 import vptree
 
+
+#C:\\Users\\Josh\\Pictures\\Saved Pictures - 15 items
+#D:\/S20 Pics - 97 items
+#D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\test\\NORMAL - 234 items
+#D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\train\\PNEUMONIA - 3875 items
 substring = ".ini"
-path_to_file = "D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\train\\PNEUMONIA"
+path_to_file = "D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\test\\NORMAL"
 images = list()
 
-#read images in from path, convert to mat obejct and store in custom type Image
+#read images in from path > create customt type > hash image > append to list
 def read_images(path_contents, path_to_file):
     hashsize = 8
     image_hash = 0
@@ -44,7 +49,7 @@ def read_images(path_contents, path_to_file):
                 #append custom type to list
                 images.append(img_object)
 
-#generate hash value from image: grayscale > resize > compute difference between pixels (intensity) > build hash if intensity value = true
+#generate hash value from image: grayscale > resize > compute difference intensity > build hash r > l
 #9x8 because 9 pixels compared against 8 adjacent pixels renders 8x8 64bit array
 def hash_image(image, temp_image):
     hashsize = 8
@@ -73,7 +78,7 @@ def hash_image(image, temp_image):
     return image_hash
 
 #if hashes & channels/size the same then a duplicate has been found
-#O(n) linear time complexity, very slow
+#O(n) linear time complexity, very slow for larger datasets (to be defined)
 def identify_duplicate_hashes(images):
     count = 0
     print("Idenitfying duplicates")
@@ -99,7 +104,6 @@ def recursive_binary_search(images, low, high, hash_to_check):
         return recursive_binary_search(images, low, mid - 1, hash_to_check)
     else:
         return recursive_binary_search(images, mid + 1, high, hash_to_check)
-
 
 
 
