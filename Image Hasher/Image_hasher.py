@@ -7,11 +7,11 @@ from Image import Image
 from PIL import Image as image
 import vptree
 
-#C:\\Users\\Josh\\Pictures\\duplicates - 5
-#C:\\Users\\Josh\\Pictures\\Saved Pictures - 15 items
-#D:\/S20 Pics - 97 items
-#D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\test\\NORMAL - 234 items
-#D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\train\\PNEUMONIA - 3875 items
+#C:\\Users\\Josh\\Pictures\\duplicates - 5 = 4 duplicates checked against dpf
+#C:\\Users\\Josh\\Pictures\\Saved Pictures - 15 items - 1 duplicate checked against dpf
+#D:\\S20 Pics - 97 items - 3 duplicates checked against dpf
+#D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\test\\NORMAL - 234 items - 3 duplicates checked against dpf
+#D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\train\\PNEUMONIA - 3875 items - 25 duplicates checked against dpf
 substring = ".ini"
 path_to_file = "D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\train\\PNEUMONIA"
 images = list()
@@ -105,6 +105,7 @@ read_images(path_contents, path_to_file)
 images.sort(key=lambda x: x.get_hash(), reverse=False)
 
 #check for number of times an image appears
+count = 0
 for index, image in enumerate(images):
 
     firstIndex = binary_search(images, len(images), image, True)
@@ -112,8 +113,19 @@ for index, image in enumerate(images):
         print("no duplicates")
     else:
         lastIndex = binary_search(images, len(images), image, False)
-        print(lastIndex - firstIndex +1)
+        if (lastIndex - firstIndex) + 1 > 1:
+            for x in range(firstIndex, lastIndex + 1):
+                if image.get_name() == images[x].get_name() or images[x].is_duplicate == True:
+                    continue
+                elif image.get_image_shape() == images[x].get_image_shape():
+                    image.append_group(images[x].get_name())
+                    images[x].set_is_duplicate(True)
+                    image.set_is_duplicate(True)
+                    print("duplicate found")
+                    print("Original= " + image.get_name() + " duplicate= " + images[x].get_name())
+                    count += 1
 
+print(str(count))
 time2 = time()
 time_taken = time2 - time1
 
