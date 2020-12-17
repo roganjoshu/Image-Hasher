@@ -52,6 +52,7 @@ def read_images(path_contents, path_to_file):
 #generate hash value from image: grayscale > resize > compute difference intensity > build hash r > l
 #9x8 because 9 pixels compared against 8 adjacent pixels renders 8x8 64bit array
 def hash_image(image, temp_image):
+
     hashsize = 8
     image_hash = 0
 
@@ -84,12 +85,14 @@ def binary_search(images, size, image, search_first):
     result = -1
     while low <= high:
         mid = int((low + high) / 2)
+        #find candidate
         if image.get_hash() == images[mid].get_hash():
+            #set mid to candidate index
             result = mid
             if search_first:               
-                high = mid - 1  #search left/ lower indices
+                high = mid - 1  #search left/ lower indices of candidate
             else:
-                low = mid + 1   #search right/ higher indices
+                low = mid + 1   #search right/ higher indices of candidate
         elif image.get_hash() < images[mid].get_hash():
             high = mid - 1
         else:
@@ -107,23 +110,22 @@ images.sort(key=lambda x: x.get_hash(), reverse=False)
 #check for number of times an image appears
 count = 0
 for index, image in enumerate(images):
+    
+    #get first and last occurence
+    first_index = binary_search(images, len(images), image, True)
+    last_index = binary_search(images, len(images), image, False)
 
-    firstIndex = binary_search(images, len(images), image, True)
-    if firstIndex == -1:
-        print("no duplicates")
-    else:
-        lastIndex = binary_search(images, len(images), image, False)
-        if (lastIndex - firstIndex) + 1 > 1:
-            for x in range(firstIndex, lastIndex + 1):
-                if image.get_name() == images[x].get_name() or images[x].is_duplicate == True:
-                    continue
-                elif image.get_image_shape() == images[x].get_image_shape():
-                    image.append_group(images[x].get_name())
-                    images[x].set_is_duplicate(True)
-                    image.set_is_duplicate(True)
-                    print("duplicate found")
-                    print("Original= " + image.get_name() + " duplicate= " + images[x].get_name())
-                    count += 1
+    #get range of duplicates, if greater than 1 and image names do not match and duplicte flag is false then duplicates found.
+    if (last_index - first_index) + 1 > 1:
+        for x in range(first_index, last_index + 1):
+            if image.get_name() == images[x].get_name() or images[x].is_duplicate == True:
+                continue
+            elif image.get_image_shape() == images[x].get_image_shape():
+                image.append_group(images[x].get_name())
+                images[x].set_is_duplicate(True)
+                image.set_is_duplicate(True)
+                print("Original= " + image.get_name() + "\n" " duplicate= " + images[x].get_name() + "\n\n")
+                count += 1
 
 print(str(count))
 time2 = time()
