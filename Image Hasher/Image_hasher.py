@@ -13,7 +13,7 @@ import vptree
 #D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\test\\NORMAL - 234 items - 3 duplicates checked against dpf
 #D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\train\\PNEUMONIA - 3875 items - 25 duplicates checked against dpf
 substring = ".ini"
-path_to_file = "D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\train\\PNEUMONIA"
+path_to_file = "D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\test\\NORMAL"
 images = list()
 
 #read images in from path > create customt type > hash image > append to list
@@ -27,14 +27,15 @@ def read_images(path_contents, path_to_file):
             continue
         else:
             image_path = path_to_file + "\\" + file_name
-            temp_image = cv.imread(image_path)
+            temp_image = cv.imread(image_path, 0)
             try:
                 #get metadata date
                 date = image.open(image_path).getexif()[36867]
                 #get resolution & colour channels
                 image_shape = temp_image.shape
+                img_pil = image.open(image_path).mode
                 #instantiate object > filename, date, imageshape
-                img_object = Image(file_name, date, image_shape)
+                img_object = Image(file_name, date, image_shape, channels)
                 #set object hash value > call hash_image()
                 img_object.set_hash(hash_image(img_object, temp_image))
                 #append custom type to list
@@ -42,8 +43,9 @@ def read_images(path_contents, path_to_file):
             except:
                 #if cant get date, get resolution & colour channels
                 image_shape = temp_image.shape
+                img_pil = image.open(image_path).mode
                 #create custom type and assign date 0
-                img_object = Image(file_name, 0, image_shape)
+                img_object = Image(file_name, 0, image_shape, channels)
                 #set object hash value > call hash_image()
                 img_object.set_hash(hash_image(img_object, temp_image))
                 #append custom type to list
@@ -56,9 +58,9 @@ def hash_image(image, temp_image):
     hashsize = 8
     image_hash = 0
 
-    grayscale = cv.cvtColor(temp_image, cv.COLOR_BGR2GRAY)
+    #grayscale = cv.cvtColor(temp_image, cv.COLOR_BGR2GRAY)
     #2D array of ints representing pixel intensity  
-    image_resized = cv.resize(grayscale, (hashsize + 1, hashsize))
+    image_resized = cv.resize(temp_image, (hashsize + 1, hashsize))
     #instantiate 2d matrix 8x8
     m, n = image_resized.shape
     pixel_difference = np.ndarray(shape=(m, n-1), dtype=bool)
