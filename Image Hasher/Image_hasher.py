@@ -33,7 +33,7 @@ def read_images(path_contents, path_to_file):
                 date = image.open(image_path).getexif()[36867]
                 #get resolution & colour channels
                 image_shape = temp_image.shape
-                img_pil = image.open(image_path).mode
+                channels = image.open(image_path).mode
                 #instantiate object > filename, date, imageshape
                 img_object = Image(file_name, date, image_shape, channels)
                 #set object hash value > call hash_image()
@@ -43,7 +43,7 @@ def read_images(path_contents, path_to_file):
             except:
                 #if cant get date, get resolution & colour channels
                 image_shape = temp_image.shape
-                img_pil = image.open(image_path).mode
+                channels = image.open(image_path).mode
                 #create custom type and assign date 0
                 img_object = Image(file_name, 0, image_shape, channels)
                 #set object hash value > call hash_image()
@@ -130,6 +130,7 @@ for index, image in enumerate(images):
                 count += 1
 
 print(str(count))
+print(len(images))
 time2 = time()
 time_taken = time2 - time1
 
