@@ -13,7 +13,7 @@ import vptree
 #D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\test\\NORMAL - 234 items - 3 duplicates checked against dpf
 #D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\train\\PNEUMONIA - 3875 items - 25 duplicates checked against dpf
 substring = ".ini"
-path_to_file = "D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\test\\NORMAL"
+path_to_file = "D:\TestData"
 images = list()
 
 #read images in from path > create customt type > hash image > append to list
@@ -28,28 +28,29 @@ def read_images(path_contents, path_to_file):
         else:
             image_path = path_to_file + "\\" + file_name
             temp_image = cv.imread(image_path, 0)
-            try:
-                #get metadata date
-                date = image.open(image_path).getexif()[36867]
-                #get resolution & colour channels
-                image_shape = temp_image.shape
-                channels = image.open(image_path).mode
-                #instantiate object > filename, date, imageshape
-                img_object = Image(file_name, date, image_shape, channels)
-                #set object hash value > call hash_image()
-                img_object.set_hash(hash_image(img_object, temp_image))
-                #append custom type to list
-                images.append(img_object)
-            except:
-                #if cant get date, get resolution & colour channels
-                image_shape = temp_image.shape
-                channels = image.open(image_path).mode
-                #create custom type and assign date 0
-                img_object = Image(file_name, 0, image_shape, channels)
-                #set object hash value > call hash_image()
-                img_object.set_hash(hash_image(img_object, temp_image))
-                #append custom type to list
-                images.append(img_object)
+            if temp_image is not None:
+                try:
+                    #get metadata date
+                    date = image.open(image_path).getexif()[36867]
+                    #get resolution & colour channels
+                    image_shape = temp_image.shape
+                    channels = image.open(image_path).mode
+                    #instantiate object > filename, date, imageshape
+                    img_object = Image(file_name, date, image_shape, channels)
+                    #set object hash value > call hash_image()
+                    img_object.set_hash(hash_image(img_object, temp_image))
+                    #append custom type to list
+                    images.append(img_object)
+                except:
+                    #if cant get date, get resolution & colour channels
+                    image_shape = temp_image.shape
+                    channels = image.open(image_path).mode
+                    #create custom type and assign date 0
+                    img_object = Image(file_name, 0, image_shape, channels)
+                    #set object hash value > call hash_image()
+                    img_object.set_hash(hash_image(img_object, temp_image))
+                    #append custom type to list
+                    images.append(img_object)
 
 #generate hash value from image: grayscale > resize > compute difference intensity > build hash r > l
 #9x8 because 9 pixels compared against 8 adjacent pixels renders 8x8 64bit array
