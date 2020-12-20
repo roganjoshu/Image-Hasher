@@ -5,134 +5,106 @@ import sys
 from time import time
 from Image import Image
 from PIL import Image as image
-import vptree
 
-#C:\\Users\\Josh\\Pictures\\duplicates - 5 = 4 duplicates checked against dpf
-#C:\\Users\\Josh\\Pictures\\Saved Pictures - 15 items - 1 duplicate checked against dpf
-#D:\\S20 Pics - 97 items - 3 duplicates checked against dpf
-#D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\test\\NORMAL - 234 items - 3 duplicates checked against dpf
-#D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\train\\PNEUMONIA - 3875 items - 25 duplicates checked against dpf
-substring = ".ini"
-path_to_file = "D:\TestData"
-images = list()
-
-#read images in from path > create customt type > hash image > append to list
-def read_images(path_contents, path_to_file):
-    hashsize = 8
-    image_hash = 0
-
+def read_images(path_contents, path_to_file):   #extract data from images using CBIR
     print("Calculating image data...")
     for file_name in path_contents:
-        if substring in file_name:
-            continue
+        image_path = path_to_file + "\\" + file_name
+        temp_image = cv.imread(image_path, 0)
+        if temp_image is not None:  #if succesfully read image
+            try:    #try retrieve following info and append to list
+                date = image.open(image_path).getexif()[36867]
+                image_shape = temp_image.shape
+                channels = image.open(image_path).mode
+                img_object = Image(file_name, date, image_shape, channels)
+                img_object.set_hash(hash_image(temp_image))
+                images.append(img_object)
+            except: #if no date, get following info and append to list
+                image_shape = temp_image.shape
+                channels = image.open(image_path).mode
+                img_object = Image(file_name, 0, image_shape, channels)
+                img_object.set_hash(hash_image(temp_image))
+                images.append(img_object)
         else:
-            image_path = path_to_file + "\\" + file_name
-            temp_image = cv.imread(image_path, 0)
-            if temp_image is not None:
-                try:
-                    #get metadata date
-                    date = image.open(image_path).getexif()[36867]
-                    #get resolution & colour channels
-                    image_shape = temp_image.shape
-                    channels = image.open(image_path).mode
-                    #instantiate object > filename, date, imageshape
-                    img_object = Image(file_name, date, image_shape, channels)
-                    #set object hash value > call hash_image()
-                    img_object.set_hash(hash_image(img_object, temp_image))
-                    #append custom type to list
-                    images.append(img_object)
-                except:
-                    #if cant get date, get resolution & colour channels
-                    image_shape = temp_image.shape
-                    channels = image.open(image_path).mode
-                    #create custom type and assign date 0
-                    img_object = Image(file_name, 0, image_shape, channels)
-                    #set object hash value > call hash_image()
-                    img_object.set_hash(hash_image(img_object, temp_image))
-                    #append custom type to list
-                    images.append(img_object)
+            continue
 
-#generate hash value from image: grayscale > resize > compute difference intensity > build hash r > l
-#9x8 because 9 pixels compared against 8 adjacent pixels renders 8x8 64bit array
-def hash_image(image, temp_image):
-
+def hash_image(temp_image): #difference hash image. Grayscale, Resize (normalize), compare, assign 
     hashsize = 8
     image_hash = 0
 
-    #grayscale = cv.cvtColor(temp_image, cv.COLOR_BGR2GRAY)
-    #2D array of ints representing pixel intensity  
-    image_resized = cv.resize(temp_image, (hashsize + 1, hashsize))
-    #instantiate 2d matrix 8x8
+    image_resized = cv.resize(temp_image, (hashsize + 1, hashsize)) #Image is already grayscaled, resize to 9x8
     m, n = image_resized.shape
-    pixel_difference = np.ndarray(shape=(m, n-1), dtype=bool)
+    pixel_difference = np.ndarray(shape=(m, n-1), dtype=bool) #initialize array same size as image resized
 
     for row in range(m):
             for col in range(n-1):
-                #if right pixel more intense than left then index = TRUE
                 if image_resized[row, col+1] > image_resized[row, col]:
-                    pixel_difference[row,col] = True
+                    pixel_difference[row,col] = True    #if right pixel > left pixel assign true
                 else:
-                    pixel_difference[row,col] = False
+                    pixel_difference[row,col] = False   #else assign false
     
-    #flatten pixel difference to 1D array, if index is TRUE append image hash with 5^value of the index
     for index, value in enumerate(pixel_difference.flatten()):
             if value == True:
-                image_hash += 5**index
+                image_hash += 5**index  #if true add 5^index to image_hash
 
     return image_hash
 
-#this needss checking
-def binary_search(images, size, image, search_first):
+def binary_search(images, size, image, search_first):  #binary search finds first occurence then checks for first and last occurence
     low = 0
     high = size - 1
     result = -1
     while low <= high:
         mid = int((low + high) / 2)
-        #find candidate
         if image.get_hash() == images[mid].get_hash():
-            #set mid to candidate index
-            result = mid
+            result = mid    #set mid to candidate index
             if search_first:               
-                high = mid - 1  #search left/ lower indices of candidate
+                high = mid - 1  #search indices left of mid
             else:
-                low = mid + 1   #search right/ higher indices of candidate
+                low = mid + 1   #search indicese right of mid
         elif image.get_hash() < images[mid].get_hash():
-            high = mid - 1
+            high = mid - 1  #search lower bounds
         else:
-            low = mid + 1
+            low = mid + 1   #search upper bounds
     return result
 
-#call functions, read images, hash images, identify duplicate hashes/images
-time1 = time()
+def get_duplicate_range(images, image): #generates range of duplicate hash values to loop through
+    count = 0
+    first_index = binary_search(images, len(images), image, True)   #get first occurence
+    last_index = binary_search(images, len(images), image, False)   #get last occurence
 
+    if (last_index - first_index) + 1 > 1:  #get range of duplicates
+        for x in range(first_index, last_index + 1):
+            if image.get_name() == images[x].get_name() or images[x].is_duplicate == True:  #if looking at same image go to next iteration
+                continue
+            elif image.get_image_shape() == images[x].get_image_shape():    #if not looking at same image and shape and channels are the same
+                image.append_group(images[x].get_name())    #append image to original image duplicate list
+                images[x].set_is_duplicate(True)    #set duplicate flags to true
+                image.set_is_duplicate(True)
+                print("Original= " + image.get_name() + "\n"" duplicate= " + images[x].get_name() + "\n\n")
+                count += 1
+    return count
+
+path_to_file = "D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\test\\NORMAL"
+images = list()
+
+time1 = time()
 path_contents = os.listdir(path_to_file)
 read_images(path_contents, path_to_file)
 
-images.sort(key=lambda x: x.get_hash(), reverse=False)
+images.sort(key=lambda x: x.get_hash(), reverse=False)  #sort images list ascending order based on hash value
 
-#check for number of times an image appears
 count = 0
-for index, image in enumerate(images):
-    
-    #get first and last occurence
-    first_index = binary_search(images, len(images), image, True)
-    last_index = binary_search(images, len(images), image, False)
+for index, image in enumerate(images):  #check for number of times an image appears
+    count += get_duplicate_range(images, image)
+print(str(count))   
 
-    #get range of duplicates, if greater than 1 and image names do not match and duplicte flag is false then duplicates found.
-    if (last_index - first_index) + 1 > 1:
-        for x in range(first_index, last_index + 1):
-            if image.get_name() == images[x].get_name() or images[x].is_duplicate == True:
-                continue
-            elif image.get_image_shape() == images[x].get_image_shape():
-                image.append_group(images[x].get_name())
-                images[x].set_is_duplicate(True)
-                image.set_is_duplicate(True)
-                print("Original= " + image.get_name() + "\n" " duplicate= " + images[x].get_name() + "\n\n")
-                count += 1
-
-print(str(count))
-print(len(images))
 time2 = time()
 time_taken = time2 - time1
 
-print(str(time_taken))
+print(len(images))
+print("Program execution taken " + str(time_taken))
+
+#steps:
+#1. Retrieve image information
+#2. Perform dHash on image
+#3. Idenitify duplicate hashes using variation on binary search
