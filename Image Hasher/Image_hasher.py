@@ -84,7 +84,7 @@ def get_duplicate_range(images, image): #generates range of duplicate hash value
                 count += 1
     return count
 
-path_to_file = "D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\chest_xray\\test\\NORMAL"
+path_to_file = "D:\\Univeristy\\3rd Year\\Honours Stage Project\\archive\\chest_xray\\test\\NORMAL"
 images = list()
 
 time1 = time()
@@ -105,6 +105,6 @@ print(len(images))
 print("Program execution taken " + str(time_taken))
 
 #steps:
-#1. Retrieve image information
-#2. Perform dHash on image
-#3. Idenitify duplicate hashes using variation on binary search
+#1. Retrieve image information via CBIR
+#2. Perform dHash on image: grayscale, normalize, compare, assign
+#3. Idenitify duplicate hashes using variation on binary search 

@@ -10,7 +10,7 @@ class Image:
         self.image_shape = image_shape
         self.group = list()
         self.is_duplicate = False
-        self.image_channels = channels
+        #self.image_channels = channels
     # getters
     def get_name(self):
         return self.image_name
