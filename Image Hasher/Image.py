@@ -27,8 +27,6 @@ class Image:
     # setters
     def set_hash(self, image_hash):
         self.image_hash = image_hash
-    def set_image(self, image):
-        self.image = image
     def append_group(self, individual):
         self.group.append(individual)
     def set_is_duplicate(self, flag):
