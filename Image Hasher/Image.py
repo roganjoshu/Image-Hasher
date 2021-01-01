@@ -1,6 +1,6 @@
 class Image:
-    #constructor
-    def __init__(self, image_name, date_created, image_shape, channels):
+
+    def __init__(self, image_name, date_created, image_shape, channels):    #constructor
         self.image_hash = 0
         self.image_name = image_name
         if date_created != 0:
@@ -11,6 +11,7 @@ class Image:
         self.group = list()
         self.is_duplicate = False
         self.image_channels = channels
+
     # getters
     def get_name(self):
         return self.image_name
@@ -24,10 +25,11 @@ class Image:
         return self.is_duplicate
     def get_image_channels(self):
         return self.image_channels
+
     # setters
     def set_hash(self, image_hash):
         self.image_hash = image_hash
     def append_group(self, individual):
-        self.group.append(individual)
+        self.group.append(individual)      
     def set_is_duplicate(self, flag):
         self.is_duplicate = flag
