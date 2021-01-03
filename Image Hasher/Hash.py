@@ -11,9 +11,9 @@ import tkinter.messagebox
 
 class Hash:
     
-    #constructor, initilize lists
-    def __init__(self):
-        self.images = list() #sortable data storage
+    #Constructor
+    def __init__(self): #initialises hasher with a list of images and a list of duplicates
+        self.images = list()
         self.dpl_images = list()
 
     #getters
@@ -27,6 +27,7 @@ class Hash:
         return self.images
 
 
+    #member functions - read, hash, identify duplicates
     def read_images(self, path_contents, path_to_file):   #extract data from images using CBIR
 
         print("Calculating image data...")
@@ -41,7 +42,7 @@ class Hash:
                     creation_date = image.open(image_path).getexif()[36867]
                     image_shape = temp_image.shape
                     colour_channels = image.open(image_path).mode
-                    img_object = Image(file_name, creation_date, image_shape, colour_channels)
+                    img_object = Image(file_name, creation_date, image_shape, colour_channels, image_path, path_to_file)
 
                     img_object.set_hash(hasher.hash_image(temp_image))
                     hasher.images.append(img_object)
@@ -49,7 +50,7 @@ class Hash:
                 except: #if no date, get following info and append to list
                     image_shape = temp_image.shape
                     colour_channels = image.open(image_path).mode
-                    img_object = Image(file_name, 0, image_shape, colour_channels)
+                    img_object = Image(file_name, 0, image_shape, colour_channels, image_path, path_to_file)
 
                     img_object.set_hash(hasher.hash_image(temp_image))
                     hasher.images.append(img_object)
@@ -121,7 +122,6 @@ class Hash:
                     image.append_group(images[x])
                     hasher.images[x].set_is_duplicate(True)
                     image.set_is_duplicate(True)
-
 
                     print("Original= " + image.get_name() + "\n"" duplicate= " + hasher.images[x].get_name() + "\n\n")
                     count += 1
