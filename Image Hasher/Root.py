@@ -94,20 +94,23 @@ class Root:
             try:  
                 path_contents = os.listdir(path_to_file)
                 if len(path_contents) == 0:       
-                    print("Directory empty")
+                    print("Directory empty.")
 
                 else:
                     hasher.read_images(path_contents, path_to_file)
                     if hasher.get_images_length() == 0:
                         tkinter.messagebox.showinfo("Error", "No images found, please check the directory for images and then try again.")
 
-                    elif hasher.get_images_length() > 0:
+                    elif hasher.get_images_length() > 1:
                         hasher.images.sort(key=lambda x: x.get_hash(), reverse=False)
                         for index, image in enumerate(hasher.get_images()):
-                            hasher.get_duplicate_range(hasher.images, image)
+                            hasher.get_duplicate_duplicates(hasher.images, image)
+                            
+                    elif len(hasher.get_dpl_images()) < 1:
+                        tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
 
-                        time2 = time()
-                        print("Program duration: " + str(time2-time1))            
+                time2 = time()
+                print("Program duration: " + str(time2-time1))
                 self.update_lstbx(hasher)
 
             except Exception as e:
@@ -127,6 +130,7 @@ class Root:
         
         text = self.lstbx_results.curselection()[0]
         img_name = self.lstbx_results.get(text)
+        colour = "blue"
 
         for index, image in enumerate(hasher.get_images()):
             if image.get_name() == img_name:
@@ -143,7 +147,7 @@ class Root:
                 self.lbl_size['text'] = "Size: " + str(image.get_size())
                 self.lbl_img_shape['text'] = "Resolution: " + str(image.get_image_shape())
                 if image.get_image_channels() == "L":
-                    self.lbl_img_chnls['text'] = "Colour channels: Grayscale"
+                    self.lbl_img_chnls['text'] = "Colour channels: GRAYSCALE"
                 else:
                     self.lbl_img_chnls['text'] = "Colour channels: " + str(image.get_image_channels())      
                 self.img_thumb.config(image=ph_img)

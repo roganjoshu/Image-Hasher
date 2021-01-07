@@ -36,18 +36,18 @@ class Hash:
             image_path = path_to_file + "\\" + file_name
             temp_image = cv.imread(image_path, 0)
 
-            if temp_image is not None:  #if succesfully read image
-
-                try:    #try retrieve following info and append to list
-                    creation_date = image.open(image_path).getexif()[36867]
+            if temp_image is not None:  #if succesfully read an image
+                try:    #try get creation date
+                    creation_date = os.path.getctime(image_path)
                 except:
                     pass
-                image_shape = temp_image.shape
-                colour_channels = image.open(image_path).mode
-                try:
+                try:    #try get last modify time
                     m_time = time.ctime(os.path.getmtime(image_path))
                 except:
                     pass
+
+                image_shape = temp_image.shape
+                colour_channels = image.open(image_path).mode
                 img_size = os.path.getsize(image_path)
                 img_object = Image(file_name, creation_date, image_shape, colour_channels, image_path, path_to_file, m_time, img_size)
 
@@ -56,16 +56,16 @@ class Hash:
             else:
                 continue
 
-    def hash_image(self, temp_image):    #hash image using dHash. Grayscale, normalize, compare, assign 
+    def hash_image(self, temp_image):    #hash image using dHash. Grayscale, compare, assign 
         hashsize = 8
         image_hash = 0
 
         image_resized = cv.resize(temp_image, (hashsize + 1, hashsize)) #Image is already grayscaled, resize to 9x8
-        m, n = image_resized.shape
-        pixel_difference = np.ndarray(shape=(m, n-1), dtype=bool) #initialize array same size as image resized
+        r, c = image_resized.shape
+        pixel_difference = np.ndarray(shape=(r, c-1), dtype=bool) #initialize array same size as image resized
 
-        for row in range(m):
-            for col in range(n-1):
+        for row in range(r):
+            for col in range(c-1):
 
                 if image_resized[row, col+1] > image_resized[row, col]:
                     pixel_difference[row,col] = True    #if right pixel > left pixel assign true
@@ -105,7 +105,7 @@ class Hash:
 
         return result
 
-    def get_duplicate_range(self, images, image):     #generates range of duplicate hash values to loop through
+    def get_duplicate_duplicates(self, images, image):     #generates range of duplicate hash values to loop through
         first_index = hasher.binary_search(hasher.images, len(hasher.images), image, True)   #get first occurence
         last_index = hasher.binary_search(hasher.images, len(hasher.images), image, False)   #get last occurence
 
@@ -117,9 +117,13 @@ class Hash:
                     continue
 
                 elif image.get_image_shape() == hasher.images[x].get_image_shape() and image.get_image_channels() == hasher.images[x].get_image_channels():    #if not looking at same image and shape and channels are the same
+                    if x == 0:
+                        hasher.dpl_images.append(image)
+                    hasher.dpl_images.append(images[x])
                     image.append_group(images[x])
                     hasher.images[x].set_is_duplicate(True)
                     image.set_is_duplicate(True)
+        print()
 
 
 #main window
