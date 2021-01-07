@@ -7,6 +7,7 @@ import tkinter as tk
 import os
 import sys
 import tkinter.messagebox
+import time
 
 
 class Hash:
@@ -15,7 +16,6 @@ class Hash:
     def __init__(self): #initialises hasher with a list of images and a list of duplicates
         self.images = list()
         self.dpl_images = list()
-
     #getters
     def get_images_length(self):    #return length of images list
         return len(self.images)
@@ -40,20 +40,19 @@ class Hash:
 
                 try:    #try retrieve following info and append to list
                     creation_date = image.open(image_path).getexif()[36867]
-                    image_shape = temp_image.shape
-                    colour_channels = image.open(image_path).mode
-                    img_object = Image(file_name, creation_date, image_shape, colour_channels, image_path, path_to_file)
+                except:
+                    pass
+                image_shape = temp_image.shape
+                colour_channels = image.open(image_path).mode
+                try:
+                    m_time = time.ctime(os.path.getmtime(image_path))
+                except:
+                    pass
+                img_size = os.path.getsize(image_path)
+                img_object = Image(file_name, creation_date, image_shape, colour_channels, image_path, path_to_file, m_time, img_size)
 
-                    img_object.set_hash(hasher.hash_image(temp_image))
-                    hasher.images.append(img_object)
-
-                except: #if no date, get following info and append to list
-                    image_shape = temp_image.shape
-                    colour_channels = image.open(image_path).mode
-                    img_object = Image(file_name, 0, image_shape, colour_channels, image_path, path_to_file)
-
-                    img_object.set_hash(hasher.hash_image(temp_image))
-                    hasher.images.append(img_object)
+                img_object.set_hash(hasher.hash_image(temp_image))
+                hasher.images.append(img_object)
             else:
                 continue
 
@@ -107,7 +106,6 @@ class Hash:
         return result
 
     def get_duplicate_range(self, images, image):     #generates range of duplicate hash values to loop through
-        count = 0
         first_index = hasher.binary_search(hasher.images, len(hasher.images), image, True)   #get first occurence
         last_index = hasher.binary_search(hasher.images, len(hasher.images), image, False)   #get last occurence
 
@@ -123,10 +121,6 @@ class Hash:
                     hasher.images[x].set_is_duplicate(True)
                     image.set_is_duplicate(True)
 
-                    print("Original= " + image.get_name() + "\n"" duplicate= " + hasher.images[x].get_name() + "\n\n")
-                    count += 1
-        return count
-
 
 #main window
 deduplicator = tk.Tk()
@@ -135,6 +129,6 @@ deduplicator.iconbitmap('idd icon.ico')
 deduplicator.geometry("1200x650")
 #instantiate hash 
 hasher = Hash()
-root = Root(deduplicator, hasher)
-
-deduplicator.mainloop()
+if __name__ == "__main__":
+    root = Root(deduplicator, hasher)
+    deduplicator.mainloop()

@@ -1,6 +1,6 @@
 class Image:
 
-    def __init__(self, image_name, date_created, image_shape, channels, image_path, location):    #constructor
+    def __init__(self, image_name, date_created, image_shape, channels, image_path, location, mod_time, img_size):    #constructor
         self.image_hash = 0
         self.image_name = image_name
         if date_created != 0:
@@ -13,6 +13,8 @@ class Image:
         self.image_channels = channels
         self.image_path = image_path
         self.location = location
+        self.mod_time = mod_time
+        self.img_size = img_size
 
     # getters
     def get_name(self):
@@ -33,6 +35,10 @@ class Image:
         return self.image_path
     def get_location(self):
         return self.location
+    def get_mod_date(self):
+        return self.mod_time
+    def get_size(self):
+        return self.img_size
 
     # setters
     def set_hash(self, image_hash):
