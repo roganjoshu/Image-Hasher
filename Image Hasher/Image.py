@@ -1,12 +1,13 @@
 class Image:
 
-    def __init__(self, image_name, date_created, image_shape, channels, image_path, location, mod_time, img_size):    #constructor
+    def __init__(self, image_name, date_created, taken_date, image_shape, channels, image_path, location, mod_time, img_size):    #constructor
         self.image_hash = 0
         self.image_name = image_name
         if date_created != 0:
             self.date_created = date_created
         else:
             self.date_created = 0
+        self.taken_date = taken_date
         self.image_shape = image_shape
         self.group = list()
         self.is_duplicate = False
@@ -39,6 +40,8 @@ class Image:
         return self.mod_time
     def get_size(self):
         return self.img_size
+    def get_date_taken(self):
+        return self.taken_date
 
     # setters
     def set_hash(self, image_hash):
