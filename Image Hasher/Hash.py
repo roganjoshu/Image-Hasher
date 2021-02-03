@@ -22,6 +22,9 @@ class Hash:
     def get_images_length(self):    #return length of images list
         return len(self.images)
 
+    def get_dpl_images_length(self):
+        return len(self.dpl_images) 
+
     def get_dpl_images(self):   #return strings of duplicate images
         return self.dpl_images
     
@@ -36,7 +39,7 @@ class Hash:
 
         for file_name in path_contents:
             image_path = path_to_file + "\\" + file_name
-            if os.path.isfile(image_path):
+            if os.path.isfile(image_path):  #if path to image exists do this
                 temp_image = cv.imread(image_path, 0)
 
                 if temp_image is not None:  #if succesfully read an image
@@ -50,8 +53,8 @@ class Hash:
                     colour_channels = image.open(image_path).mode
                     img_size = round((os.path.getsize(image_path) / 1024), 1)
 
-                    img_object = Image(file_name, creation_date,taken_date, image_shape, colour_channels, image_path, path_to_file, m_time, img_size)
-                    img_object.set_hash(hasher.hash_image(temp_image))
+                    img_object = Image(file_name, creation_date,taken_date, image_shape, colour_channels, image_path, path_to_file, m_time, img_size)   #instantiate new image object
+                    img_object.set_hash(hasher.hash_image(temp_image))  #dHash image and store in image object
                     hasher.images.append(img_object)
 
     def hash_image(self, temp_image):    #hash image using dHash. Grayscale, compare, assign 
@@ -98,7 +101,7 @@ class Hash:
         first_index = hasher.binary_search(hasher.images, len(hasher.images), image, True)   #get first occurence
         last_index = hasher.binary_search(hasher.images, len(hasher.images), image, False)   #get last occurence
 
-        if (last_index - first_index) + 1 > 1:  #get range of duplicates
+        if (last_index - first_index) + 1 > 1:  #if multiple duplicates
 
             for x in range(first_index, last_index + 1):
 

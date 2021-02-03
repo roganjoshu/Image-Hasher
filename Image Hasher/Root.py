@@ -11,8 +11,8 @@ class Root:
     def __init__(self, root, hasher):   #initialises GUI by drawing labels and storing reference to hasher and master window
 
         self.root = root
-        # self.root.grid_rowconfigure(0, weight=1)
-        # self.root.grid_columnconfigure(0, weight=1)
+        #self.root.grid_rowconfigure(0, weight=1)
+        #self.root.grid_columnconfigure(0, weight=1)
         self.hasher = hasher
         self.init_labels()            
 
@@ -46,9 +46,12 @@ class Root:
         self.btn_del_img = tk.Button(fr_results, text="Delete selection", command= self.del_selection)
         self.btn_del_img.grid(row=2, column=0, padx=5, pady=5, sticky="nw")
 
+        self.btn_mov_items = tk.Button(fr_results, text = "Move items to new directory", command= self.move_items)
+        self.btn_mov_items.grid(row=3, column=0, padx=5, pady=5, sticky="w")
+
         self.lbl_instructions = tk.Label(fr_results, text="Here you can see groups of duplicate images,"
             " select the item you wish to manage and it will appear in the 'Selected item' tab on the right.\nPlease be aware, the images identified may not be exact duplicates, review each image before taking any action.")
-        self.lbl_instructions.grid(row=3, column=0, padx=5, pady=5, sticky="nw")
+        self.lbl_instructions.grid(row=4, column=0, padx=5, pady=5, sticky="nw")
 
         #selected file frame
         fr_selected_file = tk.LabelFrame(self.root, text="Selected item")
@@ -89,35 +92,38 @@ class Root:
         hasher.images.clear()
         time1 = time()
 
-        if len(path_to_file) == 0:
+        if len(path_to_file) == 0:  #No path given
             tkinter.messagebox.showinfo("No path", "Please enter a path!")
 
-        else:
+        else:   #path given
 
-            try:  
-                path_contents = os.listdir(path_to_file)
-                if len(path_contents) == 0:       
+            try:
+                path_contents = os.listdir(path_to_file)    #if path given exists
+                if len(path_contents) == 0: #path contents empty
                     print("Directory empty.")
 
-                else:
+                else:   #path contents contains files
                     hasher.read_images(path_contents, path_to_file)
-                    if hasher.get_images_length() == 0:
+                    if hasher.get_images_length() == 0: #no images in path
                         tkinter.messagebox.showinfo("Error", "No images found, please check the directory for images and then try again.")
+                    
+                    if hasher.get_dpl_images_length() == 0:
+                        tkinter.messagebox.showinfo(" ", "No duplicates were found.")
 
-                    elif hasher.get_images_length() > 1:
+                    elif hasher.get_images_length() > 1:    #multiple images, may be duplicates
                         hasher.images.sort(key=lambda x: x.get_hash(), reverse=False)
                         for image in hasher.get_images():
                             hasher.get_duplicate_range(hasher.images, image)
                             
-                    elif len(hasher.get_dpl_images()) < 1:
+                    elif len(hasher.get_dpl_images()) < 1:  #one image, no duplicates
                         tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
 
                 time2 = time()
                 print("Program duration: " + str(time2-time1))
                 self.update_lstbx(hasher)
 
-            except:
-                tkinter.messagebox.showinfo("Invalid path", path_to_file + " is invalid, please try again.")
+            except: #path given does not exist
+                tkinter.messagebox.showinfo("Invalid path", path_to_file + " is not a valid path, please try again.")
     
     def update_lstbx(self, hasher): #updates contents of listbox to show duplicates found.
         group = 0
@@ -157,23 +163,46 @@ class Root:
                 self.img_thumb.img = ph_img
 
     def del_selection(self):    #identifies selection from listbox, deletes from machine and removes from listbox
-        selected_index = self.lstbx_results.curselection()[0]
-        selected_img = self.lstbx_results.get(selected_index)
-                
-        confirm_deletion = tk.messagebox.askquestion("Delete selected item: " + selected_img + "?",
-            "Are you sure you want to delete " + selected_img + "?" + " This operation cannot be reversed.")
+        try:
 
-        if confirm_deletion == "yes":
-            for image in self.hasher.get_images():
-                if image.get_name() == selected_img:
-                    if os.path.exists(image.get_path()):
-                        os.remove(image.get_path())
-                        self.hasher.images.remove(image)
-                        self.lstbx_results.delete(selected_index)
-                        self.lstbx_results.select_set(selected_index-1)
-                        self.lstbx_results.event_generate("<<ListboxSelect>>")
-                        tk.messagebox.showinfo("Success", selected_img + " was deleted successfully.")
-                    else:
-                        tk.messagebox.showinfo("Error", "There was a problem removing the image.")
-        if confirm_deletion == "no":
-            tk.messagebox.showinfo("Operation cancelled", selected_img + " was not deleted.")
+            selected_index = self.lstbx_results.curselection()[0]
+            selected_img = self.lstbx_results.get(selected_index)
+
+            confirm_deletion = tk.messagebox.askquestion("Delete selected item: " + selected_img + "?", 
+                "Are you sure you want to delete " + selected_img + "?" + " This operation cannot be reversed.")
+
+            if confirm_deletion == "yes":
+                for image in self.hasher.get_images():
+                    if image.get_name() == selected_img:
+                        if os.path.exists(image.get_path()):
+                            os.remove(image.get_path())
+                            self.hasher.images.remove(image)
+                            try:
+                                self.hasher.dpl_images.remove(image)
+                            except:
+                                pass
+                            self.lstbx_results.delete(selected_index)
+                            self.lstbx_results.select_set(selected_index-1)
+                            self.lstbx_results.event_generate("<<ListboxSelect>>")
+                            tk.messagebox.showinfo("Success", selected_img + " was deleted successfully.")
+                        else:
+                            tk.messagebox.showinfo("Error", "There was a problem removing the image.")
+            else:
+                tk.messagebox.showinfo("Operation cancelled", selected_img + " was not deleted.")
+        except Exception as e:
+            print(e)
+
+    def move_items(self):
+        if self.lstbx_results.size() > 1:
+            conf_move = tk.messagebox.askquestion("Warning!", "This will remove duplicate images from the chosen directory leaving behind the original images."
+                " named IDDDuplicates located on the desktop. Do you wish to continue?")
+            if conf_move == "yes":
+                desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop') + "\\" + "IDDDuplicates" 
+                if not os.path.exists(desktop):
+                    os.makedirs(desktop)
+                for image in self.hasher.get_dpl_images():
+                    os.rename(image.get_path(), desktop + "\\" + image.get_name())
+            else:
+                tk.messagebox.showinfo("Operation cancelled", "The operation has been cancelled.")
+        else:
+            tk.messagebox.showinfo("Error", "No items have been found, you either have no duplicates or have not scanned a directory. Please try again.")
