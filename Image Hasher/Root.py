@@ -11,10 +11,10 @@ class Root:
     def __init__(self, root, hasher):   #initialises GUI by drawing labels and storing reference to hasher and master window
 
         self.root = root
-        #self.root.grid_rowconfigure(0, weight=1)
-        #self.root.grid_columnconfigure(0, weight=1)
+        self.root.grid_rowconfigure(0, weight=1)
+        self.root.grid_columnconfigure(0, weight=1)
         self.hasher = hasher
-        self.init_labels()            
+        self.init_labels()      
 
     def init_labels(self):  #draws GUI elements
         #user input and file path frame
@@ -29,6 +29,12 @@ class Root:
 
         self.btn_scan = tk.Button(fr_scan, text="Scan!", command= lambda: self.scan_directory(self.entr_path.get(), self.hasher))
         self.btn_scan.grid(row=0, column=2, padx=5, pady=5)
+
+        self.checked = tk.IntVar()
+        self.chkbx_full = tk.Checkbutton(fr_scan, variable=self.checked, text="Scan entire drive", command=lambda:self.disable_entry())
+        self.chkbx_full.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
+
+
 
         #file path results frame
         fr_results = tk.LabelFrame(self.root, text="Possible duplicate images")
@@ -53,12 +59,14 @@ class Root:
             " select the item you wish to manage and it will appear in the 'Selected item' tab on the right.\nPlease be aware, the images identified may not be exact duplicates, review each image before taking any action.")
         self.lbl_instructions.grid(row=4, column=0, padx=5, pady=5, sticky="nw")
 
+
+
         #selected file frame
         fr_selected_file = tk.LabelFrame(self.root, text="Selected item")
         fr_selected_file.grid(rowspan=3, row=0, column=1, padx=5, pady=5, sticky="nw")
 
         self.lbl_img_name = tk.Label(fr_selected_file, text="File name: ")
-        self.lbl_img_name.grid(row=0, column=0, padx=5, pady=10, sticky="w")
+        self.lbl_img_name.grid(row=0, column=0, padx=5, pady=10, sticky="nw")
 
         self.lbl_img_location = tk.Label(fr_selected_file, text="File location: ")
         self.lbl_img_location.grid(row=1, column=0, padx=5, pady=10, sticky="nw")
@@ -87,12 +95,21 @@ class Root:
         self.img_thumb = tk.Label(fr_selected_file, image=None)
         self.img_thumb.grid(row=9, column=0, padx=5, pady=10, sticky="nw")
 
+    def disable_entry(self):
+        if self.checked.get() == 1:
+            self.entr_path.config(state='disabled')
+        else:
+            self.entr_path.config(state='normal')
+
     def scan_directory(self, path_to_file, hasher):   #begins scanning process of images, called by scan button
         self.lstbx_results.delete(0, tk.END)    #clear listbox and images list for next 
         hasher.images.clear()
         time1 = time()
 
-        if len(path_to_file) == 0:  #No path given
+        if self.checked.get() == 1: #search whole drive
+            print("This box is checked!")
+
+        elif len(path_to_file) == 0:  #No path given
             tkinter.messagebox.showinfo("No path", "Please enter a path!")
 
         else:   #path given
@@ -106,16 +123,13 @@ class Root:
                     hasher.read_images(path_contents, path_to_file)
                     if hasher.get_images_length() == 0: #no images in path
                         tkinter.messagebox.showinfo("Error", "No images found, please check the directory for images and then try again.")
-                    
-                    if hasher.get_dpl_images_length() == 0:
-                        tkinter.messagebox.showinfo(" ", "No duplicates were found.")
 
                     elif hasher.get_images_length() > 1:    #multiple images, may be duplicates
                         hasher.images.sort(key=lambda x: x.get_hash(), reverse=False)
                         for image in hasher.get_images():
                             hasher.get_duplicate_range(hasher.images, image)
                             
-                    elif len(hasher.get_dpl_images()) < 1:  #one image, no duplicates
+                    if len(hasher.get_dpl_images()) < 1:  #one image, no duplicates
                         tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
 
                 time2 = time()

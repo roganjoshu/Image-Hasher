@@ -122,7 +122,7 @@ class Hash:
 deduplicator = tk.Tk()
 deduplicator.title("UOH: Image de-duplicator")
 deduplicator.iconbitmap('idd icon.ico')
-deduplicator.geometry("1200x650")
+deduplicator.geometry("1100x680")
 #instantiate hash
 
 hasher = Hash()
