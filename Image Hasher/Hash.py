@@ -33,29 +33,45 @@ class Hash:
 
 
 #member functions - read, hash, identify duplicates
-    def read_images(self, path_contents, path_to_file):   #extract data from images using CBIR
-
+    def read_images(self, file_name, r):   #extract data from images using CBIR
+        
         print("Calculating image data...")
-
-        for file_name in path_contents:
-            image_path = path_to_file + "\\" + file_name
-            if os.path.isfile(image_path):  #if path to image exists do this
-                temp_image = cv.imread(image_path, 0)
-
-                if temp_image is not None:  #if succesfully read an image
-                    creation_date = time.ctime(os.path.getctime(image_path))
-                    try:
-                        taken_date = image.open(image_path).getexif()[36867]
-                    except:
-                        taken_date = "Unavailable"
-                    m_time = time.ctime(os.path.getmtime(image_path))
-                    image_shape = temp_image.shape
-                    colour_channels = image.open(image_path).mode
-                    img_size = round((os.path.getsize(image_path) / 1024), 1)
-
-                    img_object = Image(file_name, creation_date,taken_date, image_shape, colour_channels, image_path, path_to_file, m_time, img_size)   #instantiate new image object
-                    img_object.set_hash(hasher.hash_image(temp_image))  #dHash image and store in image object
+        path_to_file = r + "\\" + file_name
+        if os.path.isfile(path_to_file):  #if path to image exists do this
+            temp_image = cv.imread(path_to_file, 0)
+            if temp_image is not None:  #if succesfully read an image
+                creation_date = time.ctime(os.path.getctime(path_to_file))
+                try:
+                    taken_date = image.open(path_to_file).getexif()[36867]
+                except:
+                    taken_date = "Unavailable"
+                m_time = time.ctime(os.path.getmtime(path_to_file))
+                image_shape = temp_image.shape
+                try:
+                    colour_channels = image.open(path_to_file).mode
+                except:
+                    colour_channels = "None"
+                img_size = round((os.path.getsize(path_to_file) / 1024), 1)
+                img_object = Image(file_name, creation_date,taken_date, image_shape, colour_channels, path_to_file, path_to_file, m_time, img_size)   #instantiate new image object
+                img_object.set_hash(hasher.hash_image(temp_image))  #dHash image and store in image object
+                if img_object.get_hash() != 0:
                     hasher.images.append(img_object)
+                    return True
+            else:
+                return False
+    
+    def scan_drive(self, drive, drives):
+        count = 0
+        for r, d, f in os.walk(drives[drive] + "\\"):
+            for file in f:
+                filepath = os.path.join(r, file)
+                if self.read_images(file, r):
+                    count += 1
+                    print(filepath + " has been read")
+                else:
+                    print(filepath + " has not been read!")
+        print(" ")
+        print(str(count))
 
     def hash_image(self, temp_image):    #hash image using dHash. Grayscale, compare, assign 
         hashsize = 8
@@ -97,7 +113,7 @@ class Hash:
                 low = mid + 1   #search upper bounds
         return result
 
-    def get_duplicate_range(self, images, image):     #generates range of duplicate hash values to loop through6
+    def get_duplicate_range(self, images, image, index):     #generates range of duplicate hash values to loop through6
         first_index = hasher.binary_search(hasher.images, len(hasher.images), image, True)   #get first occurence
         last_index = hasher.binary_search(hasher.images, len(hasher.images), image, False)   #get last occurence
 
@@ -105,7 +121,7 @@ class Hash:
 
             for x in range(first_index, last_index + 1):
 
-                if image.get_name() == hasher.images[x].get_name() or hasher.images[x].is_duplicate == True:  #if looking at same image go to next iteration
+                if index == x:  #if looking at same image go to next iteration
                     continue
 
                 elif image.get_image_shape() == hasher.images[x].get_image_shape() and image.get_image_channels() == hasher.images[x].get_image_channels():    #if not looking at same image and shape and channels are the same
@@ -122,7 +138,7 @@ class Hash:
 deduplicator = tk.Tk()
 deduplicator.title("UOH: Image de-duplicator")
 deduplicator.iconbitmap('idd icon.ico')
-deduplicator.geometry("1100x680")
+deduplicator.geometry("1200x680")
 #instantiate hash
 
 hasher = Hash()

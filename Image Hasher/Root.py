@@ -5,34 +5,46 @@ import PIL
 from PIL import ImageTk
 import os
 import sys
+import win32api
+import shutil
 
 class Root:
 
     def __init__(self, root, hasher):   #initialises GUI by drawing labels and storing reference to hasher and master window
-
+        self.drives = [x[:2] for x in win32api.GetLogicalDriveStrings().split('\x00')[:-1]]
+        self.radio_btns = list()
         self.root = root
         self.root.grid_rowconfigure(0, weight=1)
-        self.root.grid_columnconfigure(0, weight=1)
+        #self.root.grid_columnconfigure(0, weight=1)
         self.hasher = hasher
-        self.init_labels()      
+        self.init_labels()
+        self.image_path_list = list()
+           
 
     def init_labels(self):  #draws GUI elements
         #user input and file path frame
-        fr_scan = tk.LabelFrame(self.root, text="Enter path to the folder you wish to scan")
-        fr_scan.grid(row=0, column=0, padx=5, pady=5, sticky="nw")
+        self.fr_scan = tk.LabelFrame(self.root, text="Enter path to the folder you wish to scan")
+        self.fr_scan.grid(row=0, column=0, padx=5, pady=5, sticky="nw")
 
-        self.lbl_path = tk.Label(fr_scan, text="Path to folder:")
+        self.lbl_path = tk.Label(self.fr_scan, text="Path to folder:")
         self.lbl_path.grid(row=0,column=0, padx=5, pady=5)
 
-        self.entr_path = tk.Entry(fr_scan, width=100)
+        self.entr_path = tk.Entry(self.fr_scan, width=100)
         self.entr_path.grid(row=0, column=1, pady=5)
 
-        self.btn_scan = tk.Button(fr_scan, text="Scan!", command= lambda: self.scan_directory(self.entr_path.get(), self.hasher))
+        self.btn_scan = tk.Button(self.fr_scan, text="Scan!", command= lambda: self.scan_directory(self.entr_path.get(), self.hasher))
         self.btn_scan.grid(row=0, column=2, padx=5, pady=5)
 
         self.checked = tk.IntVar()
-        self.chkbx_full = tk.Checkbutton(fr_scan, variable=self.checked, text="Scan entire drive", command=lambda:self.disable_entry())
-        self.chkbx_full.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
+        self.chkbx_full = tk.Checkbutton(self.fr_scan, variable=self.checked, text="Scan entire drive (Note: This is not recommended as it will scan system files and identify necessary files for system operation)", command=lambda:self.disable_entry())
+        self.chkbx_full.grid(columnspan=2, row=1, column=0, padx=5, pady=5, sticky="nw")
+
+        self.drive_var = tk.IntVar()
+
+        for index, drive in enumerate(self.drives):
+            self.radbtn = tk.Radiobutton(self.fr_scan, text=drive, variable=self.drive_var, value=index, state='disabled')
+            self.radbtn.grid(row=3+index, column=0, padx=5, pady=5, sticky="nw")
+            self.radio_btns.append(self.radbtn)
 
 
 
@@ -43,7 +55,7 @@ class Root:
         self.lstbx_scrllbr = tk.Scrollbar(fr_results)
         self.lstbx_scrllbr.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
 
-        self.lstbx_results = tk.Listbox(fr_results, width=120, height=19)
+        self.lstbx_results = tk.Listbox(fr_results, width=127, height=19)
         self.lstbx_results.config(yscrollcommand=self.lstbx_scrllbr.set)
         self.lstbx_results.bind("<<ListboxSelect>>", lambda x: self.update_label(self.hasher))
         self.lstbx_scrllbr.config(command=self.lstbx_results.yview)
@@ -98,64 +110,69 @@ class Root:
     def disable_entry(self):
         if self.checked.get() == 1:
             self.entr_path.config(state='disabled')
+            for btn in self.radio_btns:
+                btn.config(state='normal')
         else:
             self.entr_path.config(state='normal')
-
+            for btn in self.radio_btns:
+                btn.config(state = 'disabled')
+        
     def scan_directory(self, path_to_file, hasher):   #begins scanning process of images, called by scan button
         self.lstbx_results.delete(0, tk.END)    #clear listbox and images list for next 
         hasher.images.clear()
-        time1 = time()
 
-        if self.checked.get() == 1: #search whole drive
-            print("This box is checked!")
-
-        elif len(path_to_file) == 0:  #No path given
-            tkinter.messagebox.showinfo("No path", "Please enter a path!")
-
-        else:   #path given
-
-            try:
-                path_contents = os.listdir(path_to_file)    #if path given exists
+        if self.checked.get() == 1: #end-user request for whole drive search
+            self.hasher.scan_drive(self.drive_var.get(), self.drives)
+            
+        elif self.checked.get() == 0:   #end user request folder search
+            if len(path_to_file) == 0:
+                tkinter.messagebox.showinfo("No path", "Please enter a path!")
+            else:
+                path_contents = os.listdir(path_to_file)
                 if len(path_contents) == 0: #path contents empty
                     print("Directory empty.")
+                else:
+                    for file_name in path_contents:
+                        image_path = path_to_file + "\\" + file_name
+                        self.image_path_list.append(image_path)
+                        self.hasher.read_images(file_name, path_to_file)
 
-                else:   #path contents contains files
-                    hasher.read_images(path_contents, path_to_file)
-                    if hasher.get_images_length() == 0: #no images in path
-                        tkinter.messagebox.showinfo("Error", "No images found, please check the directory for images and then try again.")
+        try:     
+            if self.hasher.get_images_length() == 0: #no images in path
+                tkinter.messagebox.showinfo("Error", "No images found, please check the directory for images and then try again.")
+                    
+            elif self.hasher.get_images_length() > 1:    #multiple images, may be duplicates
+                self.hasher.images.sort(key=lambda x: x.get_hash(), reverse=False)
+                for index, image in enumerate(self.hasher.get_images()):
+                    if not image.get_is_duplicate():
+                        self.hasher.get_duplicate_range(self.hasher.images, image, index)
+                        
+            elif len(self.hasher.get_dpl_images()) < 1:  #no duplicates were found in the directory
+                tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
+            self.update_lstbx(self.hasher)
 
-                    elif hasher.get_images_length() > 1:    #multiple images, may be duplicates
-                        hasher.images.sort(key=lambda x: x.get_hash(), reverse=False)
-                        for image in hasher.get_images():
-                            hasher.get_duplicate_range(hasher.images, image)
-                            
-                    if len(hasher.get_dpl_images()) < 1:  #one image, no duplicates
-                        tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
-
-                time2 = time()
-                print("Program duration: " + str(time2-time1))
-                self.update_lstbx(hasher)
-
-            except: #path given does not exist
-                tkinter.messagebox.showinfo("Invalid path", path_to_file + " is not a valid path, please try again.")
+        except Exception as e: #path given does not exist
+            tkinter.messagebox.showinfo("Invalid path", e) #path_to_file + " is not a valid path, please try again.")
     
     def update_lstbx(self, hasher): #updates contents of listbox to show duplicates found.
         group = 0
-        for img in hasher.get_images():
+        for index, img in enumerate(hasher.get_images()):
             if len(img.get_group()) > 0:
                 group += 1
                 self.lstbx_results.insert(tk.END, "------------------------------------------- Group " + str(group) + " -------------------------------------------")
-                self.lstbx_results.insert(tk.END, img.get_name())
+                self.lstbx_results.insert(tk.END, img.get_path())
                 for duplicate in img.get_group():
-                    self.lstbx_results.insert(tk.END, duplicate.get_name())
+                    self.lstbx_results.insert(tk.END, duplicate.get_path())
 
     def update_label(self, hasher): #updates labels in selected file frame with image data
-        
-        text = self.lstbx_results.curselection()[0]
-        img_name = self.lstbx_results.get(text)
+        try:
+            text = self.lstbx_results.curselection()[0]
+            img_name = self.lstbx_results.get(text)
+        except:
+            pass
 
         for image in hasher.get_images():
-            if image.get_name() == img_name:
+            if image.get_path() == img_name:
                 img = PIL.Image.open(image.get_path())
                 resized = img.thumbnail((256,256))
                 ph_img = ImageTk.PhotoImage(img)
@@ -175,6 +192,7 @@ class Root:
                     self.lbl_img_chnls['text'] = "Colour channels: " + str(image.get_image_channels())      
                 self.img_thumb.config(image=ph_img)
                 self.img_thumb.img = ph_img
+                break
 
     def del_selection(self):    #identifies selection from listbox, deletes from machine and removes from listbox
         try:
@@ -207,15 +225,18 @@ class Root:
             print(e)
 
     def move_items(self):
+        
         if self.lstbx_results.size() > 1:
             conf_move = tk.messagebox.askquestion("Warning!", "This will remove duplicate images from the chosen directory leaving behind the original images."
-                " named IDDDuplicates located on the desktop. Do you wish to continue?")
+                " They will be moved to a new directory named IDDDuplicates located on the desktop. Do you wish to continue?")
             if conf_move == "yes":
                 desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop') + "\\" + "IDDDuplicates" 
                 if not os.path.exists(desktop):
                     os.makedirs(desktop)
                 for image in self.hasher.get_dpl_images():
-                    os.rename(image.get_path(), desktop + "\\" + image.get_name())
+                    #os.rename(image.get_path(), desktop + "\\" + image.get_name())
+                    shutil.move(image.get_path(), desktop + "\\" + image.get_name())
+                tk.messagebox.showinfo("Success", "Duplicates has successfully been moved.")
             else:
                 tk.messagebox.showinfo("Operation cancelled", "The operation has been cancelled.")
         else:
