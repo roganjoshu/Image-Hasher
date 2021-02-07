@@ -29,7 +29,7 @@ class Root:
         self.lbl_path = tk.Label(self.fr_scan, text="Path to folder:")
         self.lbl_path.grid(row=0,column=0, padx=5, pady=5)
 
-        self.entr_path = tk.Entry(self.fr_scan, width=100)
+        self.entr_path = tk.Entry(self.fr_scan, width=105)
         self.entr_path.grid(row=0, column=1, pady=5)
 
         self.btn_scan = tk.Button(self.fr_scan, text="Scan!", command= lambda: self.scan_directory(self.entr_path.get(), self.hasher))
@@ -121,42 +121,52 @@ class Root:
         self.lstbx_results.delete(0, tk.END)    #clear listbox and images list for next 
         hasher.images.clear()
 
-        if self.checked.get() == 1: #end-user request for whole drive search
-            self.hasher.scan_drive(self.drive_var.get(), self.drives)
-            
-        elif self.checked.get() == 0:   #end user request folder search
-            if len(path_to_file) == 0:
-                tkinter.messagebox.showinfo("No path", "Please enter a path!")
+        if self.checked.get() == 1: #end user has requested a drive scan
+            confirm_scan = tk.messagebox.askquestion("Warning", "Scanning an entire drive is not recommended as it may identify system files necessary for software operation, you may also experience longer than usual search times. Would you like to continue?")
+            if confirm_scan == "yes":
+                try:
+                    self.hasher.scan_drive(self.drive_var.get(), self.drives, False)
+                except:
+                    tk.messagebox.showinfo("Error", "The drive you are trying to scan is unavailable. Make sure the drive is correctly connected, and the correct permissions are given.")
             else:
-                path_contents = os.listdir(path_to_file)
-                if len(path_contents) == 0: #path contents empty
-                    print("Directory empty.")
+                return
+            
+        elif self.checked.get() == 0:   #end user has requested a folder scan   
+
+            if len(path_to_file) == 0:  #path not given by user ask for path
+                tk.messagebox.showinfo("Error","No path given, please try again.")
+                return
+
+            else:
+                if os.path.exists(path_to_file):
+                    self.hasher.scan_drive(path_to_file, self.hasher, True) #path been provided by end user san directories
                 else:
-                    for file_name in path_contents:
-                        image_path = path_to_file + "\\" + file_name
-                        self.image_path_list.append(image_path)
-                        self.hasher.read_images(file_name, path_to_file)
+                    tk.messagebox.showinfo("Error", "Invalid path, please try again.")
+                    return
 
         try:     
-            if self.hasher.get_images_length() == 0: #no images in path
+            if self.hasher.get_images_length() == 0:    #No images found in the directory provided by the end user
                 tkinter.messagebox.showinfo("Error", "No images found, please check the directory for images and then try again.")
+                return
                     
-            elif self.hasher.get_images_length() > 1:    #multiple images, may be duplicates
-                self.hasher.images.sort(key=lambda x: x.get_hash(), reverse=False)
+            elif self.hasher.get_images_length() > 1:   #if more than 1 image, scan for duplicates
+                self.hasher.get_images().sort(key=lambda x: x.get_hash(), reverse=False)  #sort list of images for binary search
+
                 for index, image in enumerate(self.hasher.get_images()):
-                    if not image.get_is_duplicate():
-                        self.hasher.get_duplicate_range(self.hasher.images, image, index)
+                    if  not image.get_is_duplicate():
+                        self.hasher.get_duplicate_range(self.hasher.images, image, index)   #call binary search support method with generates range of duplicates in images list
+
+                self.update_lstbx(self.hasher)
                         
-            elif len(self.hasher.get_dpl_images()) < 1:  #no duplicates were found in the directory
+            else:   #no duplicates were found in the directory
                 tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
-            self.update_lstbx(self.hasher)
 
         except Exception as e: #path given does not exist
-            tkinter.messagebox.showinfo("Invalid path", e) #path_to_file + " is not a valid path, please try again.")
+            tkinter.messagebox.showinfo("Invalid path", e)
     
     def update_lstbx(self, hasher): #updates contents of listbox to show duplicates found.
         group = 0
-        for index, img in enumerate(hasher.get_images()):
+        for img in hasher.get_images():
             if len(img.get_group()) > 0:
                 group += 1
                 self.lstbx_results.insert(tk.END, "------------------------------------------- Group " + str(group) + " -------------------------------------------")
@@ -174,7 +184,7 @@ class Root:
         for image in hasher.get_images():
             if image.get_path() == img_name:
                 img = PIL.Image.open(image.get_path())
-                resized = img.thumbnail((256,256))
+                img.thumbnail((256,256))
                 ph_img = ImageTk.PhotoImage(img)
                 self.lbl_img_name['text'] = "File name: " + image.get_name()
                 self.lbl_img_location['text'] = "File path: " + image.get_location()

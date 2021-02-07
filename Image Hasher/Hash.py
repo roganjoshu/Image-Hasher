@@ -53,27 +53,32 @@ class Hash:
                     colour_channels = "None"
                 img_size = round((os.path.getsize(path_to_file) / 1024), 1)
                 img_object = Image(file_name, creation_date,taken_date, image_shape, colour_channels, path_to_file, path_to_file, m_time, img_size)   #instantiate new image object
-                img_object.set_hash(hasher.hash_image(temp_image))  #dHash image and store in image object
+                img_object.set_hash(hasher.hash_image(temp_image, img_object))  #dHash image and store in image object
                 if img_object.get_hash() != 0:
                     hasher.images.append(img_object)
                     return True
             else:
                 return False
     
-    def scan_drive(self, drive, drives):
-        count = 0
-        for r, d, f in os.walk(drives[drive] + "\\"):
-            for file in f:
-                filepath = os.path.join(r, file)
-                if self.read_images(file, r):
-                    count += 1
-                    print(filepath + " has been read")
-                else:
-                    print(filepath + " has not been read!")
-        print(" ")
-        print(str(count))
-
-    def hash_image(self, temp_image):    #hash image using dHash. Grayscale, compare, assign 
+    def scan_drive(self, location, drives, dedicated_search):
+        if not dedicated_search:
+            for r, d, f in os.walk(drives[location] + "\\"):
+                for file in f:
+                    filepath = os.path.join(r, file)
+                    if self.read_images(file, r):
+                        print(filepath + " has been read")
+                    else:
+                        print(filepath + " has not been read!")
+        else:
+            for r, d, f in os.walk(location):
+                for file in f:
+                    filepath = os.path.join(r, file)
+                    if self.read_images(file, r):
+                        print(filepath + " has been read")
+                    else:
+                        print(filepath + " has not been read!")
+                
+    def hash_image(self, temp_image, img_object):    #hash image using dHash. Grayscale, compare, assign 
         hashsize = 8
         image_hash = 0
 
@@ -90,7 +95,7 @@ class Hash:
 
         for index, value in enumerate(pixel_difference.flatten()):
             if value == True:
-                image_hash += 5**index  #if true add 5^index to image_hash
+                image_hash += 5**index  #if true add 5^index to image_hash   
 
         return image_hash
 
@@ -124,14 +129,15 @@ class Hash:
                 if index == x:  #if looking at same image go to next iteration
                     continue
 
-                elif image.get_image_shape() == hasher.images[x].get_image_shape() and image.get_image_channels() == hasher.images[x].get_image_channels():    #if not looking at same image and shape and channels are the same
-                    if x == 0:
-                        hasher.dpl_images.append(image)
+                elif image.get_image_shape() == hasher.images[x].get_image_shape():
+                    if image.get_image_channels() == hasher.images[x].get_image_channels():    #if not looking at same image and shape and channels are the same
+                        if x == 0:
+                            hasher.dpl_images.append(image)
 
-                    hasher.dpl_images.append(images[x])
-                    image.append_group(images[x])
-                    hasher.images[x].set_is_duplicate(True)
-                    image.set_is_duplicate(True)
+                        hasher.dpl_images.append(images[x])
+                        image.append_group(images[x])
+                        hasher.images[x].set_is_duplicate(True)
+                        image.set_is_duplicate(True)
 
 
 #main window
