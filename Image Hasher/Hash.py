@@ -118,7 +118,7 @@ class Hash:
                 low = mid + 1   #search upper bounds
         return result
 
-    def get_duplicate_range(self, images, image, index):     #generates range of duplicate hash values to loop through6
+    def get_duplicate_range(self, images, image, index):     #generates range of duplicate hash values to loop through
         first_index = hasher.binary_search(hasher.images, len(hasher.images), image, True)   #get first occurence
         last_index = hasher.binary_search(hasher.images, len(hasher.images), image, False)   #get last occurence
 
@@ -134,10 +134,16 @@ class Hash:
                         if x == 0:
                             hasher.dpl_images.append(image)
 
-                        hasher.dpl_images.append(images[x])
                         image.append_group(images[x])
                         hasher.images[x].set_is_duplicate(True)
                         image.set_is_duplicate(True)
+                        hasher.dpl_images.append(images[x])
+    
+    def del_group(self):
+        for img in hasher.get_images():
+            if len(img.get_group()) > 0:
+                img.get_group().clear()
+                       
 
 
 #main window

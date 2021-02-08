@@ -19,7 +19,6 @@ class Root:
         self.hasher = hasher
         self.init_labels()
         self.image_path_list = list()
-           
 
     def init_labels(self):  #draws GUI elements
         #user input and file path frame
@@ -64,7 +63,7 @@ class Root:
         self.btn_del_img = tk.Button(fr_results, text="Delete selection", command= self.del_selection)
         self.btn_del_img.grid(row=2, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_mov_items = tk.Button(fr_results, text = "Move items to new directory", command= self.move_items)
+        self.btn_mov_items = tk.Button(fr_results, text = "Move items to new directory", command= self.move_images)
         self.btn_mov_items.grid(row=3, column=0, padx=5, pady=5, sticky="w")
 
         self.lbl_instructions = tk.Label(fr_results, text="Here you can see groups of duplicate images,"
@@ -120,6 +119,7 @@ class Root:
     def scan_directory(self, path_to_file, hasher):   #begins scanning process of images, called by scan button
         self.lstbx_results.delete(0, tk.END)    #clear listbox and images list for next 
         hasher.images.clear()
+        hasher.dpl_images.clear()
 
         if self.checked.get() == 1: #end user has requested a drive scan
             confirm_scan = tk.messagebox.askquestion("Warning", "Scanning an entire drive is not recommended as it may identify system files necessary for software operation, you may also experience longer than usual search times. Would you like to continue?")
@@ -165,11 +165,12 @@ class Root:
             tkinter.messagebox.showinfo("Invalid path", e)
     
     def update_lstbx(self, hasher): #updates contents of listbox to show duplicates found.
+        self.lstbx_results.delete(0, tk.END)
         group = 0
         for img in hasher.get_images():
             if len(img.get_group()) > 0:
                 group += 1
-                self.lstbx_results.insert(tk.END, "------------------------------------------- Group " + str(group) + " -------------------------------------------")
+                self.lstbx_results.insert(tk.END, "------------------------------------------- Group " + str(group) + " - Items(" + str(len(img.get_group()) + 1)+") -------------------------------------------")
                 self.lstbx_results.insert(tk.END, img.get_path())
                 for duplicate in img.get_group():
                     self.lstbx_results.insert(tk.END, duplicate.get_path())
@@ -180,7 +181,6 @@ class Root:
             img_name = self.lstbx_results.get(text)
         except:
             pass
-
         for image in hasher.get_images():
             if image.get_path() == img_name:
                 img = PIL.Image.open(image.get_path())
@@ -201,8 +201,7 @@ class Root:
                 else:
                     self.lbl_img_chnls['text'] = "Colour channels: " + str(image.get_image_channels())      
                 self.img_thumb.config(image=ph_img)
-                self.img_thumb.img = ph_img
-                break
+                self.img_thumb.img = ph_img           
 
     def del_selection(self):    #identifies selection from listbox, deletes from machine and removes from listbox
         try:
@@ -234,20 +233,41 @@ class Root:
         except Exception as e:
             print(e)
 
-    def move_items(self):
+    def move_images(self):
         
         if self.lstbx_results.size() > 1:
-            conf_move = tk.messagebox.askquestion("Warning!", "This will remove duplicate images from the chosen directory leaving behind the original images."
-                " They will be moved to a new directory named IDDDuplicates located on the desktop. Do you wish to continue?")
+            conf_move = tk.messagebox.askquestion("Warning!", "This will remove duplicate images from the chosen directory leaving behind one of each image."
+                " They will be moved to a new directory named IDDDuplicates located at the root directory of the specified drive. Do you wish to continue?")
             if conf_move == "yes":
-                desktop = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop') + "\\" + "IDDDuplicates" 
-                if not os.path.exists(desktop):
-                    os.makedirs(desktop)
-                for image in self.hasher.get_dpl_images():
-                    #os.rename(image.get_path(), desktop + "\\" + image.get_name())
-                    shutil.move(image.get_path(), desktop + "\\" + image.get_name())
-                tk.messagebox.showinfo("Success", "Duplicates has successfully been moved.")
+                if self.checked.get() == 1:
+                    drive = self.drives[self.drive_var.get()] + "\\" + "IDDDuplicates"
+                else:
+                    path = self.entr_path.get()
+                    s = path.split("\\", 1)
+                    drive = s[0] + "\\" + "IDDDuplicates"
+                if not os.path.exists(drive):
+                    os.makedirs(drive)
+                for index, image in enumerate(self.hasher.get_dpl_images()):
+                    os.rename(image.get_path(), drive + "\\" + "dupe" + str(index) + "__" + image.get_name())
+                tk.messagebox.showinfo("Success", "Duplicates have successfully been moved.")
+                self.hasher.del_group()
+                self.update_lstbx(self.hasher)
+                self.clear_sel_lbl()
+                return
+
             else:
                 tk.messagebox.showinfo("Operation cancelled", "The operation has been cancelled.")
         else:
             tk.messagebox.showinfo("Error", "No items have been found, you either have no duplicates or have not scanned a directory. Please try again.")
+
+    def clear_sel_lbl(self):
+        self.lbl_img_name['text'] = "File name: "
+        self.lbl_img_location['text'] = "File path: "
+        self.lbl_taken_date['text'] = "Date taken: "
+        self.lbl_img_creation_date['text'] = "Creation date: "
+        self.lbl_mod_time['text'] = "Date modified: "
+        self.lbl_size['text'] = "Size: "
+        self.lbl_img_shape['text'] = "Resolution: "
+        self.lbl_img_chnls['text'] = "Colour channels: "
+        self.img_thumb.config(image=None)
+        self.img_thumb.img = None
