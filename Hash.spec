@@ -4,7 +4,7 @@ block_cipher = None
 
 
 a = Analysis(['Hash.py'],
-             pathex=['D:\\Univeristy\\3rd Year\\Honours Stage Project\\Image-Hasher'],
+             pathex=['C:\\Users\\joshu\\Documents\\University\\Honours Stage\\Image-Hasher'],
              binaries=[],
              datas=[],
              hiddenimports=[],
