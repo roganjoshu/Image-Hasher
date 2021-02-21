@@ -6,11 +6,16 @@ from Root import Root
 import numpy as np
 import tkinter as tk
 import os
+import sys
+import tkinter.messagebox
 import time
+import py2exe
+
 
 
 class Hash:
     
+    #Constructor
     def __init__(self): #initialises hasher with a list of images and a list of duplicates
         self.images = list()
         self.dpl_images = list()
@@ -18,7 +23,7 @@ class Hash:
         self.images_scanned = 0
         self.items_excluded = 0
         self.exceptions = ["windows", "program files", "recycle.bin", "programdata"]
-
+    #getters
     def get_images_length(self):    #return length of images list
         return len(self.images)
 
@@ -85,6 +90,8 @@ class Hash:
                 else:
                     for file in f:
                         filepath = os.path.join(r, file)
+                        if "." not in filepath:
+                            continue
                         if self.read_images(file, r):
                             print(filepath + " has been read")
                             self.items_scanned += 1
@@ -94,7 +101,7 @@ class Hash:
                             self.items_scanned += 1
 
     def hash_image(self, temp_image, img_object):    #hash image using dHash. Grayscale, compare, assign 
-        hashsize = 8
+        hashsize = 32
         image_hash = 0
 
         image_resized = cv.resize(temp_image, (hashsize + 1, hashsize)) #Image is already grayscaled, resize to 9x8
@@ -110,7 +117,7 @@ class Hash:
 
         for index, value in enumerate(pixel_difference.flatten()):
             if value == True:
-                image_hash += 5**index  #if true add 5^index to image_hash   
+                image_hash += 2**index  #if true add 5^index to image_hash   
 
         return image_hash
 

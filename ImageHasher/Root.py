@@ -1,8 +1,9 @@
 from time import time
-from PIL import ImageTk
 import tkinter as tk
+import tkinter as ttk
 import tkinter.messagebox
 import PIL
+from PIL import ImageTk
 import os
 import sys
 import win32api
@@ -34,7 +35,7 @@ class Root:
         self.btn_scan.grid(row=0, column=2, padx=5, pady=5)
 
         self.checked = tk.IntVar()
-        self.chkbx_full = tk.Checkbutton(self.fr_scan, variable=self.checked, text="Full drive scan (Note: This is not recommended as it will scan system/application files \nwhich will increase the search time and drastically increase the number of idenitfied items.)", command=lambda:self.disable_entry())
+        self.chkbx_full = tk.Checkbutton(self.fr_scan, variable=self.checked, text="Scan entire drive (Note: This is not recommended as it will scan software files and system files \nwhich will increase the search time and drastically increase the number of idenitfied items.)", command=lambda:self.disable_entry())
         self.chkbx_full.grid(columnspan=2, row=1, column=0, padx=5, pady=5, sticky="nw")
 
         self.drive_var = tk.IntVar()
@@ -104,7 +105,7 @@ class Root:
         self.img_thumb = tk.Label(fr_selected_file, image=None)
         self.img_thumb.grid(row=9, column=0, padx=5, pady=10, sticky="nw")
 
-    def disable_entry(self):    #disables the entry box when the user selects to scan a whole drive
+    def disable_entry(self):
         if self.checked.get() == 1:
             self.entr_path.config(state='disabled')
             for btn in self.radio_btns:
@@ -144,7 +145,7 @@ class Root:
         self.identify_duplicates()   
         time2 = time()
         self.update_lstbx(self.hasher)
-        print("\nItems scanned: " + str(self.hasher.items_scanned) + "\nImages scanned: " + str(self.hasher.images_scanned) + "\nDuplicates found(excluding origin): " + str(self.hasher.get_dpl_images_length()) + "\nTime taken: " + str(time2 - time1) + "s")    
+        print("\nItems scanned: " + str(self.hasher.items_scanned) + "\nImages scanned: " + str(self.hasher.images_scanned) + "\nDuplicates found(excluding origin): " + str(self.hasher.get_dpl_images_length()) + "\nTime taken: " + str(time2 - time1) + "s")
 
     def identify_duplicates(self):  #uses list of images to identify duplicate hashes
         try:    #folder has been scanned, check for images, update listbox and print scan statistics 
@@ -213,7 +214,7 @@ class Root:
 
             if confirm_deletion == "yes":
                 for image in self.hasher.get_images():
-                    if image.get_path() == selected_img:
+                    if image.get_name() == selected_img:
                         if os.path.exists(image.get_path()):
                             os.remove(image.get_path())
                             self.hasher.images.remove(image)
@@ -224,6 +225,7 @@ class Root:
                             self.lstbx_results.delete(selected_index)
                             self.lstbx_results.select_set(selected_index-1)
                             self.lstbx_results.event_generate("<<ListboxSelect>>")
+                            tk.messagebox.showinfo("Success", selected_img + " was deleted successfully.")
                         else:
                             tk.messagebox.showinfo("Error", "There was a problem removing the image.")
             else:
@@ -269,3 +271,6 @@ class Root:
         self.lbl_img_chnls['text'] = "Colour channels: "
         self.img_thumb.config(image=None)
         self.img_thumb.img = None
+    
+    def bew(self):
+        pass
