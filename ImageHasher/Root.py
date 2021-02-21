@@ -175,6 +175,8 @@ class Root:
                 for duplicate in img.get_group():
                     self.lstbx_results.insert(tk.END, duplicate.get_path())
 
+        print()
+
     def update_label(self, hasher): #updates labels in selected file frame with image data
         try:
             text = self.lstbx_results.curselection()[0]
@@ -188,7 +190,7 @@ class Root:
                 ph_img = ImageTk.PhotoImage(img)
                 self.lbl_img_name['text'] = "File name: " + image.get_name()
                 self.lbl_img_location['text'] = "File path: " + image.get_location()
-                if image.get_date_taken() == "Unavailable":
+                if image.get_date_taken() == None:
                     self.lbl_taken_date['text'] = "Date taken: Unavailable"
                 else:
                     self.lbl_taken_date['text'] = "Date taken: " + str(image.get_date_taken())
@@ -198,10 +200,10 @@ class Root:
                 self.lbl_img_shape['text'] = "Resolution: "  + str(image.get_image_shape()[0]) + " x" + str(image.get_image_shape()[1])
                 if image.get_image_channels() == "L":
                     self.lbl_img_chnls['text'] = "Colour channels: GRAYSCALE"
-                else:
-                    self.lbl_img_chnls['text'] = "Colour channels: " + str(image.get_image_channels())      
+                elif image.get_image_channels() != None:
+                    self.lbl_img_chnls['text'] = "Colour channels: " + str(image.get_image_channels()) 
                 self.img_thumb.config(image=ph_img)
-                self.img_thumb.img = ph_img           
+                self.img_thumb.img = ph_img
 
     def del_selection(self):    #identifies selection from listbox, deletes from machine and removes from listbox
         try:
@@ -271,6 +273,3 @@ class Root:
         self.lbl_img_chnls['text'] = "Colour channels: "
         self.img_thumb.config(image=None)
         self.img_thumb.img = None
-    
-    def bew(self):
-        pass

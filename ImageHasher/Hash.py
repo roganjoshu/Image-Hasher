@@ -46,15 +46,16 @@ class Hash:
             if temp_image is not None:  #if succesfully read an image
                 creation_date = time.ctime(os.path.getctime(path_to_file))
                 try:
-                    taken_date = image.open(path_to_file).getexif()[36867]
+                    exif = image.open(path_to_file).getexif()
+                    taken_date = exif.get(36867)
                 except:
-                    taken_date = "Unavailable"
+                    taken_date = None
                 m_time = time.ctime(os.path.getmtime(path_to_file))
                 image_shape = temp_image.shape
                 try:
                     colour_channels = image.open(path_to_file).mode
                 except:
-                    colour_channels = "None"
+                    colour_channels = None
                 img_size = round((os.path.getsize(path_to_file) / 1024), 1)
                 img_object = Image(file_name, creation_date,taken_date, image_shape, colour_channels, path_to_file, path_to_file, m_time, img_size)   #instantiate new image object
                 img_object.set_hash(hasher.hash_image(temp_image, img_object))  #dHash image and store in image object
@@ -148,12 +149,14 @@ class Hash:
 
             for x in range(first_index, last_index + 1):
 
-                if index == x:  #if looking at same image go to next iteration
+                if images[index].get_path() == images[x].get_path():  #if looking at same image go to next iteration
+                    images[index].set_is_duplicate(True)
+                    hasher.dpl_images.append(images[index])
                     continue
 
                 elif image.get_image_shape() == hasher.images[x].get_image_shape():
                     if image.get_image_channels() == hasher.images[x].get_image_channels():    #if not looking at same image and shape and channels are the same
-                        if x == 0:
+                        if not images[index].get_is_duplicate():
                             hasher.dpl_images.append(image)
 
                         image.append_group(images[x])
