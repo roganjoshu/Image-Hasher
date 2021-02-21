@@ -19,6 +19,7 @@ class Root:
         self.hasher = hasher
         self.init_labels()
         self.image_path_list = list()
+        self.months = {'1':'Jan', '2':'Feb', '3':'Mar', '4':'Apr', '5':'May','6':'Jun','7':'Jul','8':'Aug','9':'Sep','10':'Oct','11':'Nov','12':'Dec'}
 
     def init_labels(self):  #draws GUI elements
         #user input and file path frame
