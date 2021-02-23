@@ -11,8 +11,6 @@ import tkinter.messagebox
 import time
 import py2exe
 
-
-
 class Hash:
     
     #Constructor
@@ -104,6 +102,7 @@ class Hash:
     def hash_image(self, temp_image, img_object):    #hash image using dHash. Grayscale, compare, assign 
         hashsize = 32
         image_hash = 0
+        ham_value = ""
 
         image_resized = cv.resize(temp_image, (hashsize + 1, hashsize)) #Image is already grayscaled, resize to 9x8
         r, c = image_resized.shape
@@ -118,9 +117,16 @@ class Hash:
 
         for index, value in enumerate(pixel_difference.flatten()):
             if value == True:
-                image_hash += 2**index  #if true add 5^index to image_hash   
+                image_hash += 2** index  #if true add 5^index to image_hash
+                ham_value += "1"
+            else:
+                ham_value += "0"
 
+        img_object.set_ham_distance(ham_value)
         return image_hash
+
+    def hamming_distance(self, first_image, second_image):
+        return sum(c1 != c2 for c1, c2 in zip(first_image.get_ham_value(), second_image.get_ham_value()))
 
     def binary_search(self, images, size, image, search_first):   #binary search finds first occurence then checks for first and last occurence
         low = 0
@@ -169,7 +175,6 @@ class Hash:
             if len(img.get_group()) > 0:
                 img.get_group().clear()
                        
-
 
 #main window
 deduplicator = tk.Tk()

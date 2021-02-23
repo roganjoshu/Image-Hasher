@@ -32,12 +32,16 @@ class Root:
         self.entr_path = tk.Entry(self.fr_scan, width=105)
         self.entr_path.grid(row=0, column=1, pady=5)
 
-        self.btn_scan = tk.Button(self.fr_scan, text="Scan!", command= lambda: self.scan_directory(self.entr_path.get(), self.hasher))
+        self.btn_scan = tk.Button(self.fr_scan, text="Scan!", command= lambda: self.scan(self.entr_path.get(), self.hasher))
         self.btn_scan.grid(row=0, column=2, padx=5, pady=5)
+
+        self.similar_checked = tk.IntVar()
+        self.chkbx_similar = tk.Checkbutton(self.fr_scan, variable=self.similar_checked, text="Check for similar images aswell?")
+        self.chkbx_similar.grid(columnspan=2, row=1, column=0, padx=5, pady=5, sticky="nw")
 
         self.checked = tk.IntVar()
         self.chkbx_full = tk.Checkbutton(self.fr_scan, variable=self.checked, text="Scan entire drive (Note: This is not recommended as it will scan software files and system files \nwhich will increase the search time and drastically increase the number of idenitfied items.)", command=lambda:self.disable_entry())
-        self.chkbx_full.grid(columnspan=2, row=1, column=0, padx=5, pady=5, sticky="nw")
+        self.chkbx_full.grid(columnspan=2, row=2, column=0, padx=5, pady=5, sticky="nw")
 
         self.drive_var = tk.IntVar()
 
@@ -106,7 +110,7 @@ class Root:
         self.img_thumb = tk.Label(fr_selected_file, image=None)
         self.img_thumb.grid(row=9, column=0, padx=5, pady=10, sticky="nw")
 
-    def disable_entry(self):
+    def disable_entry(self):    #disables entry box if user decided to check whole drive
         if self.checked.get() == 1:
             self.entr_path.config(state='disabled')
             for btn in self.radio_btns:
@@ -116,7 +120,7 @@ class Root:
             for btn in self.radio_btns:
                 btn.config(state = 'disabled')
         
-    def scan_directory(self, path_to_file, hasher):   #begins scanning process of images, called by scan button
+    def scan(self, path_to_file, hasher):   #begins scanning process of images, called by scan button
         self.lstbx_results.delete(0, tk.END)    #clear listbox and images list for next 
         self.clear_sel_lbl()
         hasher.images.clear()
@@ -131,7 +135,7 @@ class Root:
                 except:
                     tk.messagebox.showinfo("Error", "The drive you are trying to scan is unavailable. Make sure the drive is correctly connected, and the correct permissions are given.")
             else:
-                return            
+                return      
         elif self.checked.get() == 0:   #end user has requested a specific folder scan 
             if len(path_to_file) == 0:
                 tk.messagebox.showinfo("Error","No path given, please try again.")

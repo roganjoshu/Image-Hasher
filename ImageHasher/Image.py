@@ -42,6 +42,8 @@ class Image:
         return self.img_size
     def get_date_taken(self):
         return self.taken_date
+    def get_ham_value(self):
+        return self.ham_value
 
     # setters
     def set_hash(self, image_hash):
@@ -50,3 +52,5 @@ class Image:
         self.group.append(individual)      
     def set_is_duplicate(self, flag):
         self.is_duplicate = flag
+    def set_ham_distance(self, hamming_value):
+        self.ham_value = hamming_value
