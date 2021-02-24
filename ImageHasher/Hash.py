@@ -21,6 +21,7 @@ class Hash:
         self.images_scanned = 0
         self.items_excluded = 0
         self.exceptions = ["windows", "program files", "recycle.bin", "programdata"]
+        self.file_types = [".jpg", ".png", ".jpeg", ".bmp", ".jp2", ".jpe", ".dib", ".tiff"]
     #getters
     def get_images_length(self):    #return length of images list
         return len(self.images)
@@ -37,12 +38,10 @@ class Hash:
 
     def read_images(self, file_name, r):   #extract data from images using CBIR
         
-        print("Calculating image data...")
         path_to_file = r + "\\" + file_name
         if os.path.isfile(path_to_file):  #if path to image exists do this
             temp_image = cv.imread(path_to_file, 0)
-            if temp_image is not None:  #if succesfully read an image
-                
+            if temp_image is not None:  #if succesfully read an image                
                 try:
                     exif = image.open(path_to_file).getexif()
                     date_taken = exif.get(36867)
@@ -71,27 +70,27 @@ class Hash:
         for r, d, f in os.walk(drives[location] + "\\"):
             folder = r.split("\\", 2)[1].lower()
             if any(exception in folder for exception in self.exceptions):
-                print(r + " HAS NOT BEEN READ")
-                self.items_excluded += 1
+                self.items_scanned += 1
+                continue
             else:
                 for file in f:
-                    filepath = os.path.join(r, file)
-                    if "." not in filepath:
-                        continue
-                    if self.read_images(file, r):
-                        print(filepath + " has been read")
-                        self.items_scanned += 1
-                        self.images_scanned += 1
-                    else:
-                        print(filepath + " has not been read!")
-                        self.items_scanned += 1
-                     
+                    self.items_scanned += 1
+                    if any(filetype in file for filetype in self.file_types):
+                        filepath = os.path.join(r, file)
+                        if "." not in filepath:
+                            continue
+                        print("Calculating image data...")
+                        if self.read_images(file, r):
+                            print(filepath + " has been read")
+                            self.images_scanned += 1
+                        else:
+                            print(filepath + " has not beeen read")
+
     def scan_path(self, location):  #when file path is specified
         for r, d, f in os.walk(location):
                 folder = r.split("\\", 2)[1].lower()
                 if any(exception in folder for exception in self.exceptions):
-                    print(r + " HAS NOT BEEN READ")
-                    self.items_excluded += 1
+                    self.items_scanned += 1
                 else:
                     for file in f:
                         filepath = os.path.join(r, file)

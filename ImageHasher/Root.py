@@ -125,6 +125,8 @@ class Root:
         self.clear_sel_lbl()
         hasher.images.clear()
         hasher.dpl_images.clear()
+        hasher.images_scanned = 0
+        hasher.items_scanned = 0
 
         time1 = time()
         if self.checked.get() == 1: #end user has requested a drive scan
@@ -150,7 +152,7 @@ class Root:
         self.identify_duplicates()   
         time2 = time()
         self.update_lstbx(self.hasher)
-        print("\nItems scanned: " + str(self.hasher.items_scanned) + "\nImages scanned: " + str(self.hasher.images_scanned) + "\nDuplicates found(excluding origin): " + str(self.hasher.get_dpl_images_length()) + "\nTime taken: " + str(time2 - time1) + "s")
+        print("\nItems scanned: " + str(self.hasher.items_scanned) + "\nImages scanned: " + str(self.hasher.images_scanned) + "\nDuplicates found: " + str(self.hasher.get_dpl_images_length()) + "\nTime taken: " + str(time2 - time1) + "s")
 
     def identify_duplicates(self):  #uses list of images to identify duplicate hashes
         try:    #folder has been scanned, check for images, update listbox and print scan statistics 
