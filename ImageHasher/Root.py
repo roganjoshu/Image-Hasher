@@ -220,8 +220,8 @@ class Root:
                 "Are you sure you want to delete " + selected_img + "?" + " This operation cannot be reversed.")
 
             if confirm_deletion == "yes":
-                for image in self.hasher.get_images():
-                    if image.get_name() == selected_img:
+                for image in self.hasher.get_dpl_images():
+                    if image.get_path() == selected_img:
                         if os.path.exists(image.get_path()):
                             os.remove(image.get_path())
                             self.hasher.images.remove(image)
