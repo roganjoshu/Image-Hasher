@@ -35,18 +35,19 @@ class Hash:
         return self.images
 
 
-    def read_images(self, file_name, location):   #extract data from images using CBIR
+    def read_images(self, file_name, r):   #extract data from images using CBIR
         
         print("Calculating image data...")
-        path_to_file = location + "\\" + file_name
+        path_to_file = r + "\\" + file_name
         if os.path.isfile(path_to_file):  #if path to image exists do this
             temp_image = cv.imread(path_to_file, 0)
             if temp_image is not None:  #if succesfully read an image
+                
                 try:
                     exif = image.open(path_to_file).getexif()
                     date_taken = exif.get(36867)
                 except:
-                    date_taken = None            
+                    date_taken = None
                 try:
                     colour_channels = image.open(path_to_file).mode
                 except:
@@ -58,9 +59,11 @@ class Hash:
                 image_size = round((os.path.getsize(path_to_file) / 1024), 1)
 
                 img_object = Image(file_name, creation_date, date_taken, image_shape, colour_channels, path_to_file, path_to_file, modified_date, image_size)   #instantiate new image object
-                img_object.set_hash(hasher.hash_image(temp_image, img_object))
-                hasher.images.append(img_object)
-                return True
+                img_object.set_hash(hasher.hash_image(temp_image, img_object))  #dHash image and store in image object
+
+                if img_object.get_hash() != 0:
+                    hasher.images.append(img_object)
+                    return True
             else:
                 return False
     
@@ -68,10 +71,13 @@ class Hash:
         for r, d, f in os.walk(drives[location] + "\\"):
             folder = r.split("\\", 2)[1].lower()
             if any(exception in folder for exception in self.exceptions):
+                print(r + " HAS NOT BEEN READ")
                 self.items_excluded += 1
             else:
                 for file in f:
                     filepath = os.path.join(r, file)
+                    if "." not in filepath:
+                        continue
                     if self.read_images(file, r):
                         print(filepath + " has been read")
                         self.items_scanned += 1
@@ -84,6 +90,7 @@ class Hash:
         for r, d, f in os.walk(location):
                 folder = r.split("\\", 2)[1].lower()
                 if any(exception in folder for exception in self.exceptions):
+                    print(r + " HAS NOT BEEN READ")
                     self.items_excluded += 1
                 else:
                     for file in f:
