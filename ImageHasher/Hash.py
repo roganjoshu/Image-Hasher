@@ -36,8 +36,8 @@ class Hash:
         return self.images
 
 
-    def read_images(self, file_name, r):   #extract data from images using CBIR
-        
+
+    def read_images(self, file_name, r):   #extract data from images using CBIR   
         path_to_file = r + "\\" + file_name
         if os.path.isfile(path_to_file):  #if path to image exists do this
             temp_image = cv.imread(path_to_file, 0)
@@ -71,38 +71,31 @@ class Hash:
             folder = r.split("\\", 2)[1].lower()
             if any(exception in folder for exception in self.exceptions):
                 self.items_scanned += 1
-                continue
             else:
                 for file in f:
-                    self.items_scanned += 1
-                    if any(filetype in file for filetype in self.file_types):
+                    if any(filetype in file.lower() for filetype in self.file_types):
+                        self.items_scanned += 1
                         filepath = os.path.join(r, file)
-                        if "." not in filepath:
-                            continue
-                        print("Calculating image data...")
-                        if self.read_images(file, r):
-                            print(filepath + " has been read")
-                            self.images_scanned += 1
-                        else:
-                            print(filepath + " has not beeen read")
 
-    def scan_path(self, location):  #when file path is specified
+                        if self.read_images(file, r):
+                            print(filepath + " has been read successfully")
+                            self.images_scanned += 1
+
+    def scan_path(self, location):  #when file path is specified the method is called
         for r, d, f in os.walk(location):
-                folder = r.split("\\", 2)[1].lower()
-                if any(exception in folder for exception in self.exceptions):
-                    self.items_scanned += 1
-                else:
-                    for file in f:
+            folder = r.split("\\", 2)[1].lower()
+            if any(exception in folder for exception in self.exceptions):
+                self.items_scanned += 1
+            else:
+                for file in f:
+                    if any(filetype in file.lower() for filetype in self.file_types):
+                        self.items_scanned += 1
                         filepath = os.path.join(r, file)
-                        if "." not in filepath:
-                            continue
+
                         if self.read_images(file, r):
                             print(filepath + " has been read")
-                            self.items_scanned += 1
                             self.images_scanned += 1
-                        else:
-                            print(filepath + " has not been read!")
-                            self.items_scanned += 1
+
 
     def hash_image(self, temp_image, img_object):    #hash image using dHash. Grayscale, compare, assign 
         hashsize = 32

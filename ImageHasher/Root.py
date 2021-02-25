@@ -171,6 +171,8 @@ class Root:
         except Exception as e: #path given does not exist
             tkinter.messagebox.showinfo("Invalid path", e)
     
+
+
     def update_lstbx(self, hasher): #updates contents of listbox to show duplicates found.
         self.lstbx_results.delete(0, tk.END)
         group = 0
