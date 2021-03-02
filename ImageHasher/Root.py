@@ -7,7 +7,6 @@ from PIL import ImageTk
 import os
 import sys
 import win32api
-import shutil
 
 class Root:
 
@@ -61,6 +60,7 @@ class Root:
         self.lstbx_results = tk.Listbox(fr_results, width=127, height=19)
         self.lstbx_results.config(yscrollcommand=self.lstbx_scrllbr.set)
         self.lstbx_results.bind("<<ListboxSelect>>", lambda x: self.update_label(self.hasher))
+
         self.lstbx_scrllbr.config(command=self.lstbx_results.yview)
         self.lstbx_results.grid(columnspan=2, row=1, column=0, padx=5, pady=5, sticky="nw")
 
@@ -149,7 +149,7 @@ class Root:
                     tk.messagebox.showinfo("Error", "Invalid path, please try again.")
                     return
 
-        self.identify_duplicates()   
+        self.identify_duplicates()
         time2 = time()
         self.update_lstbx(self.hasher)
         print("\nItems scanned: " + str(self.hasher.items_scanned) + "\nImages scanned: " + str(self.hasher.images_scanned) + "\nDuplicates found: " + str(self.hasher.get_dpl_images_length()) + "\nTime taken: " + str(time2 - time1) + "s")
@@ -164,7 +164,7 @@ class Root:
 
                 for index, image in enumerate(self.hasher.get_images()):
                     if  not image.get_is_duplicate():
-                        self.hasher.get_duplicate_range(self.hasher.images, image, index)                       
+                        self.hasher.get_duplicates(self.hasher.images, image, index)          
             else:
                 tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
 
@@ -176,7 +176,7 @@ class Root:
     def update_lstbx(self, hasher): #updates contents of listbox to show duplicates found.
         self.lstbx_results.delete(0, tk.END)
         group = 0
-        for img in hasher.get_images():
+        for img in hasher.get_dpl_images():
             if len(img.get_group()) > 0:
                 group += 1
                 self.lstbx_results.insert(tk.END, "------------------------------------------- Group " + str(group) + " - Items(" + str(len(img.get_group()) + 1)+") -------------------------------------------")
@@ -259,7 +259,8 @@ class Root:
                 if not os.path.exists(drive):
                     os.makedirs(drive)
                 for index, image in enumerate(self.hasher.get_dpl_images()):
-                    os.rename(image.get_path(), drive + "\\" + "dupe" + str(index) + "__" + image.get_name())
+                    if len(image.get_group()) == 0:
+                        os.rename(image.get_path(), drive + "\\" + "dupe" + str(index) + "__" + image.get_name())
                 tk.messagebox.showinfo("Success", "Duplicates have successfully been moved.")
                 self.hasher.del_group()
                 self.update_lstbx(self.hasher)

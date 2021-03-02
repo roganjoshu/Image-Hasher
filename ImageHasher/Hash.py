@@ -1,6 +1,6 @@
+from PIL.ExifTags import TAGS
 from cv2 import cv2 as cv
 from PIL import Image as image
-from PIL.ExifTags import TAGS
 from Image import Image
 from Root import Root
 import numpy as np
@@ -93,8 +93,9 @@ class Hash:
                         filepath = os.path.join(r, file)
 
                         if self.read_images(file, r):
-                            print(filepath + " has been read")
+                            print(filepath + " has been read successfully")
                             self.images_scanned += 1
+
 
 
     def hash_image(self, temp_image, img_object):    #hash image using dHash. Grayscale, compare, assign 
@@ -120,17 +121,13 @@ class Hash:
             else:
                 ham_value += "0"
 
-        img_object.set_ham_distance(ham_value)
+        img_object.set_fingerprint(ham_value)
         return image_hash
-
-    def hamming_distance(self, first_image, second_image):
-        return sum(c1 != c2 for c1, c2 in zip(first_image.get_ham_value(), second_image.get_ham_value()))
 
     def binary_search(self, images, size, image, search_first):   #binary search finds first occurence then checks for first and last occurence
         low = 0
         high = size - 1
         result = -1
-
         while low <= high:
             mid = int((low + high) / 2)
             if image.get_hash() == hasher.images[mid].get_hash():
@@ -142,32 +139,31 @@ class Hash:
             elif image.get_hash() < hasher.images[mid].get_hash():
                 high = mid - 1  #search lower bounds
             else:
-                low = mid + 1   #search upper bounds
+                low = mid + 1   #search upper bounds      
         return result
 
-    def get_duplicate_range(self, images, image, index):     #generates range of duplicate hash values to loop through
-        first_index = hasher.binary_search(hasher.images, len(hasher.images), image, True)   #get first occurence
-        last_index = hasher.binary_search(hasher.images, len(hasher.images), image, False)   #get last occurence
+    def get_duplicates(self, images, image, index):     #generates range of duplicate hash values to loop through
+        first_index = self.binary_search(hasher.images, len(hasher.images), image, True)   #get first occurence
+        last_index = self.binary_search(hasher.images, len(hasher.images), image, False)   #get last occurence
+        duplicates = list()
 
         if (last_index - first_index) + 1 > 1:  #if multiple duplicates
-
             for x in range(first_index, last_index + 1):
+                if image.get_image_shape() == hasher.images[x].get_image_shape():
+                    if image.get_image_channels() == hasher.images[x].get_image_channels():
+                        duplicates.append(hasher.images[x])
 
-                if images[index].get_path() == images[x].get_path():  #if looking at same image go to next iteration
-                    images[index].set_is_duplicate(True)
-                    hasher.dpl_images.append(images[index])
-                    continue
+            duplicates.sort(key=lambda x: os.path.getctime(x.get_path()))
+            
+            for index, image in enumerate(duplicates):
+                if index == 0:
+                    image.set_is_duplicate(True)
+                else:
+                    duplicates[0].append_group(image)
+                    image.set_is_duplicate(True)
+                    hasher.dpl_images.append(image)
+            hasher.dpl_images.append(duplicates[0])
 
-                elif image.get_image_shape() == hasher.images[x].get_image_shape():
-                    if image.get_image_channels() == hasher.images[x].get_image_channels():    #if not looking at same image and shape and channels are the same
-                        if not images[index].get_is_duplicate():
-                            hasher.dpl_images.append(image)
-
-                        image.append_group(images[x])
-                        hasher.images[x].set_is_duplicate(True)
-                        image.set_is_duplicate(True)
-                        hasher.dpl_images.append(images[x])
-    
     def del_group(self):
         for img in hasher.get_images():
             if len(img.get_group()) > 0:
