@@ -34,12 +34,8 @@ class Root:
         self.btn_scan = tk.Button(self.fr_scan, text="Scan!", command= lambda: self.scan(self.entr_path.get(), self.hasher))
         self.btn_scan.grid(row=0, column=2, padx=5, pady=5)
 
-        self.similar_checked = tk.IntVar()
-        self.chkbx_similar = tk.Checkbutton(self.fr_scan, variable=self.similar_checked, text="Check for similar images aswell?")
-        self.chkbx_similar.grid(columnspan=2, row=1, column=0, padx=5, pady=5, sticky="nw")
-
         self.checked = tk.IntVar()
-        self.chkbx_full = tk.Checkbutton(self.fr_scan, variable=self.checked, text="Scan entire drive (Note: This is not recommended as it will scan software files and system files \nwhich will increase the search time and drastically increase the number of idenitfied items.)", command=lambda:self.disable_entry())
+        self.chkbx_full = tk.Checkbutton(self.fr_scan, variable=self.checked, text="Full Drive Scan", command=lambda:self.disable_entry())
         self.chkbx_full.grid(columnspan=2, row=2, column=0, padx=5, pady=5, sticky="nw")
 
         self.drive_var = tk.IntVar()
@@ -110,7 +106,7 @@ class Root:
         self.img_thumb = tk.Label(fr_selected_file, image=None)
         self.img_thumb.grid(row=9, column=0, padx=5, pady=10, sticky="nw")
 
-    def disable_entry(self):    #disables entry box if user decided to check whole drive
+    def disable_entry(self):    #disables entry box if user decided to scan whole drive
         if self.checked.get() == 1:
             self.entr_path.config(state='disabled')
             for btn in self.radio_btns:
@@ -133,18 +129,18 @@ class Root:
             confirm_scan = tk.messagebox.askquestion("Warning", "Scanning an entire drive is not recommended as it may identify system files necessary for software operation, you may also experience longer than usual search times. Would you like to continue?")
             if confirm_scan == "yes":
                 try:
-                    self.hasher.scan_drive(self.drive_var.get(), self.drives)
+                    self.hasher.scan_drive(self.drive_var.get(), self.drives)   #pass drives to hasher scan_drive method with selected drive
                 except:
                     tk.messagebox.showinfo("Error", "The drive you are trying to scan is unavailable. Make sure the drive is correctly connected, and the correct permissions are given.")
             else:
-                return      
+                return
         elif self.checked.get() == 0:   #end user has requested a specific folder scan 
-            if len(path_to_file) == 0:
+            if len(path_to_file) == 0:  #check to see if user has input path
                 tk.messagebox.showinfo("Error","No path given, please try again.")
                 return
             else:
                 if os.path.exists(path_to_file):
-                    self.hasher.scan_path(path_to_file) #path been provided by end user san directories
+                    self.hasher.scan_path(path_to_file) #path has been provided by end user san path
                 else:
                     tk.messagebox.showinfo("Error", "Invalid path, please try again.")
                     return
@@ -155,17 +151,17 @@ class Root:
         print("\nItems scanned: " + str(self.hasher.items_scanned) + "\nImages scanned: " + str(self.hasher.images_scanned) + "\nDuplicates found: " + str(self.hasher.get_dpl_images_length()) + "\nTime taken: " + str(time2 - time1) + "s")
 
     def identify_duplicates(self):  #uses list of images to identify duplicate hashes
-        try:    #folder has been scanned, check for images, update listbox and print scan statistics 
-            if self.hasher.get_images_length() == 0:
+        try:
+            if self.hasher.get_images_length() == 0:    #if images length is 0 then no images were found
                 tkinter.messagebox.showinfo("Error", "No images found, please check the directory for images and then try again.")
                 return                   
-            elif self.hasher.get_images_length() > 1:
+            elif self.hasher.get_images_length() > 1:   #if more than 1 was found then sort
                 self.hasher.get_images().sort(key=lambda x: x.get_hash(), reverse=False)
 
-                for index, image in enumerate(self.hasher.get_images()):
+                for index, image in enumerate(self.hasher.get_images()):    #once sorted, loop through all images check it is not a duplicte (i.e checked previously) and identify duplicates where possible
                     if  not image.get_is_duplicate():
                         self.hasher.get_duplicates(self.hasher.images, image, index)          
-            else:
+            else:   # if 1 found then no duplicates
                 tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
 
         except Exception as e: #path given does not exist
@@ -216,16 +212,15 @@ class Root:
 
     def del_selection(self):    #identifies selection from listbox, deletes from machine and removes from listbox
         try:
-
-            selected_index = self.lstbx_results.curselection()[0]
-            selected_img = self.lstbx_results.get(selected_index)
+            selected_index = self.lstbx_results.curselection()[0]   #get selected index
+            selected_img = self.lstbx_results.get(selected_index)   #convert index into string
 
             confirm_deletion = tk.messagebox.askquestion("Delete selected item: " + selected_img + "?", 
-                "Are you sure you want to delete " + selected_img + "?" + " This operation cannot be reversed.")
+                "Are you sure you want to delete " + selected_img + "?" + " This operation cannot be reversed.")    #get input from the user confirming action
 
             if confirm_deletion == "yes":
-                for image in self.hasher.get_dpl_images():
-                    if image.get_path() == selected_img:
+                for image in self.hasher.get_dpl_images():  #loop through hasher duplicate images looking for string above
+                    if image.get_path() == selected_img:    #if found, check exists in windows, remove item from windows and dynamic lists
                         if os.path.exists(image.get_path()):
                             os.remove(image.get_path())
                             self.hasher.images.remove(image)
@@ -244,21 +239,20 @@ class Root:
         except Exception as e:
             print(e)
 
-    def move_images(self):  #move all but one duplicate from scanned directory to new directory at root of drive
-        
+    def move_images(self):  #move all but one duplicate from scanned directory to new directory at root of drive        
         if self.lstbx_results.size() > 1:
             conf_move = tk.messagebox.askquestion("Warning!", "This will remove duplicate images from the chosen directory leaving behind one of each image."
                 " They will be moved to a new directory named IDDDuplicates located at the root directory of the specified drive. Do you wish to continue?")
             if conf_move == "yes":
-                if self.checked.get() == 1:
+                if self.checked.get() == 1: #if user selected full drive scan get drive from logical drives
                     drive = self.drives[self.drive_var.get()] + "\\" + "IDDDuplicates"
-                else:
+                else:   #else get the drive from the path user entered at beginning
                     path = self.entr_path.get()
                     s = path.split("\\", 1)
                     drive = s[0] + "\\" + "IDDDuplicates"
-                if not os.path.exists(drive):
+                if not os.path.exists(drive):   #if path does not exist then create a new folder
                     os.makedirs(drive)
-                for index, image in enumerate(self.hasher.get_dpl_images()):
+                for index, image in enumerate(self.hasher.get_dpl_images()):    #loop through hasher duplicate images and if the image does not have a group i.e. it is not an original move to folder
                     if len(image.get_group()) == 0:
                         os.rename(image.get_path(), drive + "\\" + "dupe" + str(index) + "__" + image.get_name())
                 tk.messagebox.showinfo("Success", "Duplicates have successfully been moved.")
@@ -266,7 +260,6 @@ class Root:
                 self.update_lstbx(self.hasher)
                 self.clear_sel_lbl()
                 return
-
             else:
                 tk.messagebox.showinfo("Operation cancelled", "The operation has been cancelled.")
         else:

@@ -52,29 +52,29 @@ class Hash:
                 except:
                     colour_channels = None
 
-                creation_date = time.ctime(os.path.getctime(path_to_file))
-                modified_date = time.ctime(os.path.getmtime(path_to_file))
-                image_shape = temp_image.shape
-                image_size = round((os.path.getsize(path_to_file) / 1024), 1)
+                creation_date = time.ctime(os.path.getctime(path_to_file))  #gets time item came into existence on machine
+                modified_date = time.ctime(os.path.getmtime(path_to_file))  #gets time item was last modified
+                image_shape = temp_image.shape  #gets resolution/dimensions of item
+                image_size = round((os.path.getsize(path_to_file) / 1024), 1)   #gets size of file
 
-                img_object = Image(file_name, creation_date, date_taken, image_shape, colour_channels, path_to_file, path_to_file, modified_date, image_size)   #instantiate new image object
-                img_object.set_hash(hasher.hash_image(temp_image, img_object))  #dHash image and store in image object
+                image_object = Image(file_name, creation_date, date_taken, image_shape, colour_channels, path_to_file, path_to_file, modified_date, image_size)   #instantiate new custom Image object
+                image_object.set_hash(hasher.hash_image(temp_image, image_object))  #dHash image and store in image object
 
-                if img_object.get_hash() != 0:
-                    hasher.images.append(img_object)
+                if image_object.get_hash() != 0:  #if the image has a suitable hash
+                    hasher.images.append(image_object)    #append the image to the list of images
                     return True
-            else:
+            else:   #return false if the item was unreadable
                 return False
     
     def scan_drive(self, location, drives): #when drive scan is requested this method is called
         for r, d, f in os.walk(drives[location] + "\\"):
             folder = r.split("\\", 2)[1].lower()
-            if any(exception in folder for exception in self.exceptions):
+            if any(exception in folder for exception in self.exceptions):   #check to see if the string contains an exception
                 self.items_scanned += 1
             else:
                 for file in f:
-                    if any(filetype in file.lower() for filetype in self.file_types):
-                        self.items_scanned += 1
+                    if any(filetype in file.lower() for filetype in self.file_types):   #if no exception then check file extension
+                        self.items_scanned += 1 #increment counter and read if file extension is found
                         filepath = os.path.join(r, file)
 
                         if self.read_images(file, r):
@@ -82,14 +82,14 @@ class Hash:
                             self.images_scanned += 1
 
     def scan_path(self, location):  #when file path is specified the method is called
-        for r, d, f in os.walk(location):
-            folder = r.split("\\", 2)[1].lower()
-            if any(exception in folder for exception in self.exceptions):
+        for r, d, f in os.walk(location):   #recursively walk through every dir available
+            folder = r.split("\\", 2)[1].lower()    #split the string to get the drive
+            if any(exception in folder for exception in self.exceptions):   #if any of the exceptions exist in folder string do nothing but increment counter
                 self.items_scanned += 1
             else:
-                for file in f:
+                for file in f:  #if exception not in string then check to see if file is of the same type as any of the extensions in file_types
                     if any(filetype in file.lower() for filetype in self.file_types):
-                        self.items_scanned += 1
+                        self.items_scanned += 1 #increment counter and read file if the filetype is acceptable i.e. exists in the file_Types list
                         filepath = os.path.join(r, file)
 
                         if self.read_images(file, r):
@@ -103,7 +103,7 @@ class Hash:
         image_hash = 0
         ham_value = ""
 
-        image_resized = cv.resize(temp_image, (hashsize + 1, hashsize)) #Image is already grayscaled, resize to 9x8
+        image_resized = cv.resize(temp_image, (hashsize + 1, hashsize)) #Image is already grayscaled, resize to 33x32
         r, c = image_resized.shape
         pixel_difference = np.ndarray(shape=(r, c-1), dtype=bool) #initialize array same size as image resized
 
@@ -155,16 +155,16 @@ class Hash:
 
             duplicates.sort(key=lambda x: os.path.getctime(x.get_path()))
             
-            for index, image in enumerate(duplicates):
-                if index == 0:
+            for indexs, image in enumerate(duplicates):
+                if indexs == 0: #check to see if checking first image, which will be original, if so set duplicate tag true and move on to nect index
                     image.set_is_duplicate(True)
-                else:
+                else:   #if we're not checking first index then do this
                     duplicates[0].append_group(image)
                     image.set_is_duplicate(True)
                     hasher.dpl_images.append(image)
-            hasher.dpl_images.append(duplicates[0])
+            hasher.dpl_images.append(duplicates[0])    #assign duplicates[0] which will always be the original to the dpl_images list of hasher
 
-    def del_group(self):
+    def del_group(self):    #deletes the group of duplicates attached to an image
         for img in hasher.get_images():
             if len(img.get_group()) > 0:
                 img.get_group().clear()
