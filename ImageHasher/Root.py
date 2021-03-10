@@ -79,7 +79,7 @@ class Root:
         self.lbl_img_name = tk.Label(fr_selected_file, text="File name: ")
         self.lbl_img_name.grid(row=0, column=0, padx=5, pady=10, sticky="nw")
 
-        self.lbl_img_location = tk.Label(fr_selected_file, text="File location: ")
+        self.lbl_img_location = tk.Label(fr_selected_file, text="File path: ")
         self.lbl_img_location.grid(row=1, column=0, padx=5, pady=10, sticky="nw")
 
         self.lbl_taken_date = tk.Label(fr_selected_file, text="Date taken: ")
@@ -267,7 +267,7 @@ class Root:
 
     def clear_sel_lbl(self):    #clears the selected item label when a new scan is run
         self.lbl_img_name['text'] = "File name: "
-        self.lbl_img_location['text'] = "File location: "
+        self.lbl_img_location['text'] = "File path: "
         self.lbl_taken_date['text'] = "Date taken: "
         self.lbl_img_creation_date['text'] = "Creation date: "
         self.lbl_mod_time['text'] = "Date modified: "
