@@ -73,13 +73,14 @@ class Hash:
                 self.items_scanned += 1
             else:
                 for file in f:
-                    if any(filetype in file.lower() for filetype in self.file_types):   #if no exception then check file extension
-                        self.items_scanned += 1 #increment counter and read if file extension is found
-                        filepath = os.path.join(r, file)
+                    for filetype in self.file_types:
+                        if file.endswith(filetype):  # no exception then check file extension
+                            self.items_scanned += 1 #increment counter and read if file extension is found
+                            filepath = os.path.join(r, file)
 
-                        if self.read_images(file, r):
-                            print(filepath + " has been read successfully")
-                            self.images_scanned += 1
+                            if self.read_images(file, r):
+                                print(filepath + " has been read successfully")
+                                self.images_scanned += 1
 
     def scan_path(self, location):  #when file path is specified the method is called
         for r, d, f in os.walk(location):   #recursively walk through every dir available
@@ -88,20 +89,20 @@ class Hash:
                 self.items_scanned += 1
             else:
                 for file in f:  #if exception not in string then check to see if file is of the same type as any of the extensions in file_types
-                    if any(filetype in file.lower() for filetype in self.file_types):
-                        self.items_scanned += 1 #increment counter and read file if the filetype is acceptable i.e. exists in the file_Types list
-                        filepath = os.path.join(r, file)
+                    for filetype in self.file_types:
+                        if file.endswith(filetype):
+                            self.items_scanned += 1 #increment counter and read file if the filetype is acceptable i.e. exists in the file_Types list
+                            filepath = os.path.join(r, file)
 
-                        if self.read_images(file, r):
-                            print(filepath + " has been read successfully")
-                            self.images_scanned += 1
+                            if self.read_images(file, r):
+                                print(filepath + " has been read successfully")
+                                self.images_scanned += 1
 
 
 
     def hash_image(self, temp_image, img_object):    #hash image using dHash. Grayscale, compare, assign 
         hashsize = 32
         image_hash = 0
-        ham_value = ""
 
         image_resized = cv.resize(temp_image, (hashsize + 1, hashsize)) #Image is already grayscaled, resize to 33x32
         r, c = image_resized.shape
@@ -116,12 +117,8 @@ class Hash:
 
         for index, value in enumerate(pixel_difference.flatten()):
             if value == True:
-                image_hash += 2** index  #if true add 5^index to image_hash
-                ham_value += "1"
-            else:
-                ham_value += "0"
+                image_hash += 2** index  #if true add 2^index to image_hash
 
-        img_object.set_fingerprint(ham_value)
         return image_hash
 
     def binary_search(self, images, size, image, search_first):   #binary search finds first occurence then checks for first and last occurence
@@ -153,7 +150,7 @@ class Hash:
                     if image.get_image_channels() == hasher.images[x].get_image_channels():
                         duplicates.append(hasher.images[x])
 
-            duplicates.sort(key=lambda x: os.path.getctime(x.get_path()))
+            duplicates.sort(key=lambda x: os.path.getctime(x.get_path()))   #sort items based on creation date on system
             
             for indexs, image in enumerate(duplicates):
                 if indexs == 0: #check to see if checking first image, which will be original, if so set duplicate tag true and move on to nect index
