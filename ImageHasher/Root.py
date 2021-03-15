@@ -161,7 +161,8 @@ class Root:
                 for index, image in enumerate(self.hasher.get_images()):    #once sorted, loop through all images check it is not a duplicte (i.e checked previously) and identify duplicates where possible
                     if  not image.get_is_duplicate():
                         self.hasher.get_duplicates(self.hasher.images, image, index)          
-            else:   # if 1 found then no duplicates
+            
+            if self.hasher.get_dpl_images_length() < 1:
                 tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
 
         except Exception as e: #path given does not exist
