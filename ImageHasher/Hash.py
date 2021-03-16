@@ -22,6 +22,7 @@ class Hash:
         self.items_excluded = 0
         self.exceptions = ["windows", "program files", "recycle.bin", "programdata"]
         self.file_types = [".jpg", ".png", ".jpeg", ".bmp", ".jp2", ".jpe", ".dib", ".tiff"]
+        self.check_similar = False
     #getters
     def get_images_length(self):    #return length of images list
         return len(self.images)
@@ -58,7 +59,7 @@ class Hash:
                 image_size = round((os.path.getsize(path_to_file) / 1024), 1)   #gets size of file
 
                 image_object = Image(file_name, creation_date, date_taken, image_shape, colour_channels, path_to_file, path_to_file, modified_date, image_size)   #instantiate new custom Image object
-                image_object.set_hash(hasher.hash_image(temp_image, image_object))  #dHash image and store in image object
+                image_object.set_hash(hasher.hash_image(temp_image, image_object, self.check_similar))  #dHash image and store in image object
 
                 if image_object.get_hash() != 0:  #if the image has a suitable hash
                     hasher.images.append(image_object)    #append the image to the list of images
@@ -99,10 +100,16 @@ class Hash:
                                 self.images_scanned += 1
 
 
+    def hamming_distance(self, first_bin_val, second_bin_val):  #calculates the hamming distance between two image binary strings
+        return sum(c1 != c2 for c1, c2 in zip(first_bin_val, second_bin_val))
 
-    def hash_image(self, temp_image, img_object):    #hash image using dHash. Grayscale, compare, assign 
-        hashsize = 32
+    def hash_image(self, temp_image, img_object, similar):    #hash image using dHash. Grayscale, compare, assign
+        if similar: #if the user has requested a to look for similar photos
+            hashsize = 8
+        else:
+            hashsize = 32
         image_hash = 0
+        binary_value = ""
 
         image_resized = cv.resize(temp_image, (hashsize + 1, hashsize)) #Image is already grayscaled, resize to 33x32
         r, c = image_resized.shape
@@ -118,7 +125,11 @@ class Hash:
         for index, value in enumerate(pixel_difference.flatten()):
             if value == True:
                 image_hash += 2** index  #if true add 2^index to image_hash
+                binary_value += "1"
+            else:
+                binary_value += "0"
 
+        img_object.set_binary_value(binary_value)
         return image_hash
 
     def binary_search(self, images, size, image, search_first):   #binary search finds first occurence then checks for first and last occurence

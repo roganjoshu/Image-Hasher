@@ -16,6 +16,7 @@ class Image:
         self.location = location
         self.mod_time = mod_time
         self.img_size = img_size
+        self.binary_value = ""
 
     # getters
     def get_name(self):
@@ -42,6 +43,8 @@ class Image:
         return self.img_size
     def get_date_taken(self):
         return self.taken_date
+    def get_binary_value(self):
+        return self.binary_value
 
     # setters
     def set_hash(self, image_hash):
@@ -50,3 +53,5 @@ class Image:
         self.group.append(individual)      
     def set_is_duplicate(self, flag):
         self.is_duplicate = flag
+    def set_binary_value(self, binary_value):
+        self.binary_value = binary_value

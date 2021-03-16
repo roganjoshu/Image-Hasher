@@ -18,7 +18,6 @@ class Root:
         self.hasher = hasher
         self.init_labels()
         self.image_path_list = list()
-        self.months = {'1':'Jan', '2':'Feb', '3':'Mar', '4':'Apr', '5':'May','6':'Jun','7':'Jul','8':'Aug','9':'Sep','10':'Oct','11':'Nov','12':'Dec'}
 
     def init_labels(self):  #draws GUI elements
         #user input and file path frame
@@ -34,15 +33,19 @@ class Root:
         self.btn_scan = tk.Button(self.fr_scan, text="Scan!", command= lambda: self.scan(self.entr_path.get(), self.hasher))
         self.btn_scan.grid(row=0, column=2, padx=5, pady=5)
 
+        self.similar_var = tk.IntVar()
+        self.chkbx_similar = tk.Checkbutton(self.fr_scan, variable=self.similar_var, text="Check for similar images")
+        self.chkbx_similar.grid(columnspan=2, row=2, column=0, padx=5, pady=5, sticky="nw")
+
         self.checked = tk.IntVar()
         self.chkbx_full = tk.Checkbutton(self.fr_scan, variable=self.checked, text="Full Drive Scan", command=lambda:self.disable_entry())
-        self.chkbx_full.grid(columnspan=2, row=2, column=0, padx=5, pady=5, sticky="nw")
+        self.chkbx_full.grid(columnspan=2, row=3, column=0, padx=5, pady=5, sticky="nw")
 
         self.drive_var = tk.IntVar()
 
         for index, drive in enumerate(self.drives):
             self.radbtn = tk.Radiobutton(self.fr_scan, text=drive, variable=self.drive_var, value=index, state='disabled')
-            self.radbtn.grid(row=3+index, column=0, padx=5, pady=5, sticky="nw")
+            self.radbtn.grid(row=4+index, column=0, padx=5, pady=5, sticky="nw")
             self.radio_btns.append(self.radbtn)
 
         #file path results frame
@@ -123,6 +126,7 @@ class Root:
         hasher.dpl_images.clear()
         hasher.images_scanned = 0
         hasher.items_scanned = 0
+        self.hasher.check_similar = self.similar_var.get()
 
         time1 = time()
         if self.checked.get() == 1: #end user has requested a drive scan
@@ -160,7 +164,7 @@ class Root:
 
                 for index, image in enumerate(self.hasher.get_images()):    #once sorted, loop through all images check it is not a duplicte (i.e checked previously) and identify duplicates where possible
                     if  not image.get_is_duplicate():
-                        self.hasher.get_duplicates(self.hasher.images, image, index)          
+                        self.hasher.get_duplicates(self.hasher.images, image, index)       
             
             if self.hasher.get_dpl_images_length() < 1:
                 tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
