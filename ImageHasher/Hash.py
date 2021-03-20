@@ -101,7 +101,7 @@ class Hash:
 
 
     def hamming_distance(self, first_bin_val, second_bin_val):  #calculates the hamming distance between two image binary strings
-        return sum(c1 != c2 for c1, c2 in zip(first_bin_val, second_bin_val))
+        return sum(char1 != char2 for char1, char2 in zip(first_bin_val, second_bin_val))
 
     def hash_image(self, temp_image, img_object, similar):    #hash image using dHash. Grayscale, compare, assign
         if similar: #if the user has requested a to look for similar photos

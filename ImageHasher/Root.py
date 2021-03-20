@@ -13,6 +13,7 @@ class Root:
     def __init__(self, root, hasher):   #initialises GUI by drawing labels and storing reference to hasher and master window
         self.drives = [x[:2] for x in win32api.GetLogicalDriveStrings().split('\x00')[:-1]]
         self.radio_btns = list()
+        self.option_btns = list()
         self.root = root
         self.root.grid_rowconfigure(0, weight=1)
         self.hasher = hasher
@@ -34,18 +35,23 @@ class Root:
         self.btn_scan.grid(row=0, column=2, padx=5, pady=5)
 
         self.similar_var = tk.IntVar()
-        self.chkbx_similar = tk.Checkbutton(self.fr_scan, variable=self.similar_var, text="Check for similar images")
+        self.chkbx_similar = tk.Checkbutton(self.fr_scan, variable=self.similar_var, text="Check for similar images", command=lambda:self.enable_options())
         self.chkbx_similar.grid(columnspan=2, row=2, column=0, padx=5, pady=5, sticky="nw")
+
+        self.option_var = tk.IntVar()
+        self.similar_radio_btn = tk.Radiobutton(self.fr_scan, text="Similar Photos Only", variable=self.option_var, state='disabled')
+        self.similar_radio_btn.grid(row=3, column=0, padx=5, pady=5, sticky="nw")
+        self.both_radio_btn = tk.Radiobutton(self.fr_scan, text="Duplicates and Similar Photos",variable=self.option_var, state='disabled')
+        self.both_radio_btn.grid(row=3, column=1, padx=5, pady=5, sticky="nw")
 
         self.checked = tk.IntVar()
         self.chkbx_full = tk.Checkbutton(self.fr_scan, variable=self.checked, text="Full Drive Scan", command=lambda:self.disable_entry())
-        self.chkbx_full.grid(columnspan=2, row=3, column=0, padx=5, pady=5, sticky="nw")
+        self.chkbx_full.grid(columnspan=2, row=4, column=0, padx=5, pady=5, sticky="nw")
 
         self.drive_var = tk.IntVar()
-
         for index, drive in enumerate(self.drives):
             self.radbtn = tk.Radiobutton(self.fr_scan, text=drive, variable=self.drive_var, value=index, state='disabled')
-            self.radbtn.grid(row=4+index, column=0, padx=5, pady=5, sticky="nw")
+            self.radbtn.grid(row=5+index, column=0, padx=5, pady=5, sticky="nw")
             self.radio_btns.append(self.radbtn)
 
         #file path results frame
@@ -56,7 +62,7 @@ class Root:
         self.lstbx_scrllbr = tk.Scrollbar(fr_results)
         self.lstbx_scrllbr.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
 
-        self.lstbx_results = tk.Listbox(fr_results, width=127, height=19)
+        self.lstbx_results = tk.Listbox(fr_results, width=135, height=19)
         self.lstbx_results.config(yscrollcommand=self.lstbx_scrllbr.set)
         self.lstbx_results.bind("<<ListboxSelect>>", lambda x: self.update_label(self.hasher))
 
@@ -173,6 +179,13 @@ class Root:
             tkinter.messagebox.showinfo("Invalid path", e)
     
 
+    def enable_options(self):
+        if self.similar_var.get() == 1:
+            self.similar_radio_btn.config(state='normal')
+            self.both_radio_btn.config(state='normal')
+        else:
+            self.similar_radio_btn.config(state='disabled')
+            self.both_radio_btn.config(state='disabled')
 
     def update_lstbx(self, hasher): #updates contents of listbox to show duplicates found.
         self.lstbx_results.delete(0, tk.END)
@@ -242,7 +255,7 @@ class Root:
             else:
                 tk.messagebox.showinfo("Operation cancelled", selected_img + " was not deleted.")
         except Exception as e:
-            print(e)
+            tk.messagebox.showinfo("Error", "You have not selected an item.")
 
     def move_images(self):  #move all but one duplicate from scanned directory to new directory at root of drive        
         if self.lstbx_results.size() > 1:
