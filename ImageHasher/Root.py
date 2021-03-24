@@ -34,15 +34,9 @@ class Root:
         self.btn_scan = tk.Button(self.fr_scan, text="Scan!", command= lambda: self.scan(self.entr_path.get(), self.hasher))
         self.btn_scan.grid(row=0, column=2, padx=5, pady=5)
 
-        self.similar_var = tk.IntVar()
-        self.chkbx_similar = tk.Checkbutton(self.fr_scan, variable=self.similar_var, text="Check for similar images", command=lambda:self.enable_options())
+        self.similar = tk.IntVar()
+        self.chkbx_similar = tk.Checkbutton(self.fr_scan, variable=self.similar, text="Check for similar images")
         self.chkbx_similar.grid(columnspan=2, row=2, column=0, padx=5, pady=5, sticky="nw")
-
-        self.option_var = tk.IntVar()
-        self.similar_radio_btn = tk.Radiobutton(self.fr_scan, text="Similar Photos Only", variable=self.option_var, state='disabled')
-        self.similar_radio_btn.grid(row=3, column=0, padx=5, pady=5, sticky="nw")
-        self.both_radio_btn = tk.Radiobutton(self.fr_scan, text="Duplicates and Similar Photos",variable=self.option_var, state='disabled')
-        self.both_radio_btn.grid(row=3, column=1, padx=5, pady=5, sticky="nw")
 
         self.checked = tk.IntVar()
         self.chkbx_full = tk.Checkbutton(self.fr_scan, variable=self.checked, text="Full Drive Scan", command=lambda:self.disable_entry())
@@ -132,7 +126,7 @@ class Root:
         hasher.dpl_images.clear()
         hasher.images_scanned = 0
         hasher.items_scanned = 0
-        self.hasher.check_similar = self.similar_var.get()
+        self.hasher.check_similar = self.similar.get()
 
         time1 = time()
         if self.checked.get() == 1: #end user has requested a drive scan
@@ -177,15 +171,8 @@ class Root:
 
         except Exception as e: #path given does not exist
             tkinter.messagebox.showinfo("Invalid path", e)
+            print(e)
     
-
-    def enable_options(self):
-        if self.similar_var.get() == 1:
-            self.similar_radio_btn.config(state='normal')
-            self.both_radio_btn.config(state='normal')
-        else:
-            self.similar_radio_btn.config(state='disabled')
-            self.both_radio_btn.config(state='disabled')
 
     def update_lstbx(self, hasher): #updates contents of listbox to show duplicates found.
         self.lstbx_results.delete(0, tk.END)

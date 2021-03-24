@@ -101,7 +101,8 @@ class Hash:
 
 
     def hamming_distance(self, first_bin_val, second_bin_val):  #calculates the hamming distance between two image binary strings
-        return sum(char1 != char2 for char1, char2 in zip(first_bin_val, second_bin_val))
+        val = sum(char1 != char2 for char1, char2 in zip(first_bin_val, second_bin_val))
+        return val
 
     def hash_image(self, temp_image, img_object, similar):    #hash image using dHash. Grayscale, compare, assign
         if similar: #if the user has requested a to look for similar photos
@@ -132,27 +133,40 @@ class Hash:
         img_object.set_binary_value(binary_value)
         return image_hash
 
-    def binary_search(self, images, size, image, search_first):   #binary search finds first occurence then checks for first and last occurence
+    def binary_search(self, images, size, image, search_first, index):   #binary search finds first occurence then checks for first and last occurence
         low = 0
         high = size - 1
         result = -1
         while low <= high:
             mid = int((low + high) / 2)
-            if image.get_hash() == hasher.images[mid].get_hash():
-                result = mid    #set mid to candidate index
-                if search_first:               
-                    high = mid - 1  #search indices left of mid
+            if self.check_similar:
+                hamming_distance = self.hamming_distance(image.get_binary_value(), hasher.images[mid].get_binary_value())
+                if hamming_distance >= 0 and hamming_distance <= 15:
+                    result = mid    #set mid to candidate index
+                    if search_first:
+                        high = mid - 1  #search indices left of mid
+                    else:
+                        low = mid + 1   #search indices right of mid
+                elif image.get_hash() < hasher.images[mid].get_hash():
+                    high = mid - 1  #search lower bounds
                 else:
-                    low = mid + 1   #search indicese right of mid
-            elif image.get_hash() < hasher.images[mid].get_hash():
-                high = mid - 1  #search lower bounds
-            else:
-                low = mid + 1   #search upper bounds      
+                    low = mid + 1
+            elif not self.check_similar:    
+                if image.get_hash() == hasher.images[mid].get_hash():
+                    result = mid    #set mid to candidate index
+                    if search_first:               
+                        high = mid - 1  #search indices left of mid
+                    else:
+                        low = mid + 1   #search indices right of mid
+                elif image.get_hash() < hasher.images[mid].get_hash():
+                    high = mid - 1  #search lower bounds
+                else:
+                    low = mid + 1   #search upper bounds      
         return result
 
     def get_duplicates(self, images, image, index):     #generates range of duplicate hash values to loop through
-        first_index = self.binary_search(hasher.images, len(hasher.images), image, True)   #get first occurence
-        last_index = self.binary_search(hasher.images, len(hasher.images), image, False)   #get last occurence
+        first_index = self.binary_search(hasher.images, len(hasher.images), image, True, index)   #get first occurence
+        last_index = self.binary_search(hasher.images, len(hasher.images), image, False, index)   #get last occurence
         duplicates = list()
 
         if (last_index - first_index) + 1 > 1:  #if multiple duplicates
