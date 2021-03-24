@@ -28,7 +28,7 @@ class Root:
         self.lbl_path = tk.Label(self.fr_scan, text="Path to folder:")
         self.lbl_path.grid(row=0,column=0, padx=5, pady=5)
 
-        self.entr_path = tk.Entry(self.fr_scan, width=105)
+        self.entr_path = tk.Entry(self.fr_scan, width=113)
         self.entr_path.grid(row=0, column=1, pady=5)
 
         self.btn_scan = tk.Button(self.fr_scan, text="Scan!", command= lambda: self.scan(self.entr_path.get(), self.hasher))
@@ -50,26 +50,26 @@ class Root:
 
         #file path results frame
 
-        fr_results = tk.LabelFrame(self.root, text="Possible duplicate images")
-        fr_results.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
+        self.fr_results = tk.LabelFrame(self.root, text="... ")
+        self.fr_results.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
 
-        self.lstbx_scrllbr = tk.Scrollbar(fr_results)
+        self.lstbx_scrllbr = tk.Scrollbar(self.fr_results)
         self.lstbx_scrllbr.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
 
-        self.lstbx_results = tk.Listbox(fr_results, width=135, height=19)
+        self.lstbx_results = tk.Listbox(self.fr_results, width=135, height=19)
         self.lstbx_results.config(yscrollcommand=self.lstbx_scrllbr.set)
         self.lstbx_results.bind("<<ListboxSelect>>", lambda x: self.update_label(self.hasher))
 
         self.lstbx_scrllbr.config(command=self.lstbx_results.yview)
         self.lstbx_results.grid(columnspan=2, row=1, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_del_img = tk.Button(fr_results, text="Delete selection", command= self.del_selection)
+        self.btn_del_img = tk.Button(self.fr_results, text="Delete selection", command= self.del_selection)
         self.btn_del_img.grid(row=2, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_mov_items = tk.Button(fr_results, text = "Move items to new directory", command= self.move_images)
+        self.btn_mov_items = tk.Button(self.fr_results, text = "Move items to new directory", command= self.move_images)
         self.btn_mov_items.grid(row=3, column=0, padx=5, pady=5, sticky="w")
 
-        self.lbl_instructions = tk.Label(fr_results, text="Here you can see groups of duplicate images,"
+        self.lbl_instructions = tk.Label(self.fr_results, text="Here you can see groups of duplicate images,"
             " select the item you wish to manage and it will appear in the 'Selected item' tab on the right.\nPlease be aware, the images identified may not be exact duplicates, review each image before taking any action.")
         self.lbl_instructions.grid(row=4, column=0, padx=5, pady=5, sticky="nw")
 
@@ -133,7 +133,7 @@ class Root:
             confirm_scan = tk.messagebox.askquestion("Warning", "Scanning an entire drive is not recommended as it may identify system files necessary for software operation, you may also experience longer than usual search times. Would you like to continue?")
             if confirm_scan == "yes":
                 try:
-                    self.hasher.scan_drive(self.drive_var.get(), self.drives)   #pass drives to hasher scan_drive method with selected drive
+                    self.hasher.scan_drive(self.drive_var.get(), self.drives)   #pass drives to hasher scan_drive method with selected drive                    
                 except:
                     tk.messagebox.showinfo("Error", "The drive you are trying to scan is unavailable. Make sure the drive is correctly connected, and the correct permissions are given.")
             else:
@@ -143,7 +143,7 @@ class Root:
                 tk.messagebox.showinfo("Error","No path given, please try again.")
                 return
             else:
-                if os.path.exists(path_to_file):
+                if os.path.exists(path_to_file):                    
                     self.hasher.scan_path(path_to_file) #path has been provided by end user san path
                 else:
                     tk.messagebox.showinfo("Error", "Invalid path, please try again.")
@@ -152,6 +152,8 @@ class Root:
         self.identify_duplicates()
         time2 = time()
         self.update_lstbx(self.hasher)
+        self.fr_results.configure(text="Possible duplicate images: " + str(len(self.hasher.get_dpl_images())))
+
         print("\nItems scanned: " + str(self.hasher.items_scanned) + "\nImages scanned: " + str(self.hasher.images_scanned) + "\nDuplicates found: " + str(self.hasher.get_dpl_images_length()) + "\nTime taken: " + str(time2 - time1) + "s")
 
     def identify_duplicates(self):  #uses list of images to identify duplicate hashes
@@ -165,13 +167,15 @@ class Root:
                 for index, image in enumerate(self.hasher.get_images()):    #once sorted, loop through all images check it is not a duplicte (i.e checked previously) and identify duplicates where possible
                     if self.hasher.check_similar == 0:
                         if  not image.get_is_duplicate():
-                            self.hasher.get_duplicates(self.hasher.images, image, index)
+                            self.hasher.get_duplicates(self.hasher.images, image, index)                         
                     else:
                         if not image.get_is_similar():
-                            self.hasher.similar_search(image, self.hasher.get_images(), index)
+                            self.hasher.similar_search(image, self.hasher.get_images(), index)                            
             
-            if self.hasher.get_dpl_images_length() < 1:
+            if self.hasher.get_dpl_images_length() < 1 and self.hasher.check_similar == 0:
                 tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
+            elif self.hasher.get_dpl_images_length() < 1 and self.hasher.check_similar == 1:
+                tk.messagebox.showinfo("No duplicates", "No similar images found!")
 
         except Exception as e: #path given does not exist
             tkinter.messagebox.showinfo("Invalid path", e)
@@ -188,8 +192,6 @@ class Root:
                 self.lstbx_results.insert(tk.END, img.get_path())
                 for duplicate in img.get_group():
                     self.lstbx_results.insert(tk.END, duplicate.get_path())
-
-        print()
 
     def update_label(self, hasher): #updates labels in selected file frame with image data
         try:

@@ -37,36 +37,6 @@ class Hash:
         return self.images
 
 
-
-    def read_images(self, file_name, r):   #extract data from images using CBIR   
-        path_to_file = r + "\\" + file_name
-        if os.path.isfile(path_to_file):  #if path to image exists do this
-            temp_image = cv.imread(path_to_file, 0)
-            if temp_image is not None:  #if succesfully read an image                
-                try:
-                    exif = image.open(path_to_file).getexif()
-                    date_taken = exif.get(36867)
-                except:
-                    date_taken = None
-                try:
-                    colour_channels = image.open(path_to_file).mode
-                except:
-                    colour_channels = None
-
-                creation_date = time.ctime(os.path.getctime(path_to_file))  #gets time item came into existence on machine
-                modified_date = time.ctime(os.path.getmtime(path_to_file))  #gets time item was last modified
-                image_shape = temp_image.shape  #gets resolution/dimensions of item
-                image_size = round((os.path.getsize(path_to_file) / 1024), 1)   #gets size of file
-
-                image_object = Image(file_name, creation_date, date_taken, image_shape, colour_channels, path_to_file, path_to_file, modified_date, image_size)   #instantiate new custom Image object
-                image_object.set_hash(hasher.hash_image(temp_image, image_object, self.check_similar))  #dHash image and store in image object
-
-                if image_object.get_hash() != 0:  #if the image has a suitable hash
-                    hasher.images.append(image_object)    #append the image to the list of images
-                    return True
-            else:   #return false if the item was unreadable
-                return False
-    
     def scan_drive(self, location, drives): #when drive scan is requested this method is called
         for r, d, f in os.walk(drives[location] + "\\"):
             folder = r.split("\\", 2)[1].lower()
@@ -99,19 +69,49 @@ class Hash:
                                 print(filepath + " has been read successfully")
                                 self.images_scanned += 1
 
+    def read_images(self, file_name, r):   #extract data from images using CBIR   
+        path_to_file = r + "\\" + file_name
+        if os.path.isfile(path_to_file):  #if path to image exists do this
+            temp_image = cv.imread(path_to_file, 0)
+            if temp_image is not None:  #if succesfully read an image                
+                try:
+                    exif = image.open(path_to_file).getexif()
+                    date_taken = exif.get(36867)
+                except:
+                    date_taken = None
+                try:
+                    colour_channels = image.open(path_to_file).mode
+                except:
+                    colour_channels = None
+
+                creation_date = time.ctime(os.path.getctime(path_to_file))  #gets time item came into existence on machine
+                modified_date = time.ctime(os.path.getmtime(path_to_file))  #gets time item was last modified
+                image_shape = temp_image.shape  #gets resolution/dimensions of item
+                image_size = round((os.path.getsize(path_to_file) / 1024), 1)   #gets size of file
+
+                image_object = Image(file_name, creation_date, date_taken, image_shape, colour_channels, path_to_file, path_to_file, modified_date, image_size)   #instantiate new custom Image object
+                image_object.set_hash(hasher.hash_image(temp_image, image_object, self.check_similar))  #dHash image and store in image object
+
+                if image_object.get_hash() != 0:  #if the image has a suitable hash
+                    hasher.images.append(image_object)    #append the image to the list of images
+                    return True
+            else:   #return false if the item was unreadable
+                return False
+    
 
     def hamming_distance(self, first_bin_val, second_bin_val):  #calculates the hamming distance between two image binary strings
-        val = sum(char1 != char2 for char1, char2 in zip(first_bin_val, second_bin_val))
-        return val
+        hamming_distance = sum(char1 != char2 for char1, char2 in zip(first_bin_val, second_bin_val))
+        return hamming_distance
 
     def hash_image(self, temp_image, img_object, similar):    #hash image using dHash. Grayscale, compare, assign
+        image_hash = 0
+        binary_string = ""
+
         if similar: #if the user has requested a to look for similar photos
             hashsize = 8
         else:
             hashsize = 32
-        image_hash = 0
-        binary_value = ""
-
+        
         image_resized = cv.resize(temp_image, (hashsize + 1, hashsize)) #Image is already grayscaled, resize to 33x32
         r, c = image_resized.shape
         pixel_difference = np.ndarray(shape=(r, c-1), dtype=bool) #initialize array same size as image resized
@@ -126,20 +126,20 @@ class Hash:
         for index, value in enumerate(pixel_difference.flatten()):
             if value == True:
                 image_hash += 2** index  #if true add 2^index to image_hash
-                binary_value += "1"
+                binary_string += "1"
             else:
-                binary_value += "0"
+                binary_string += "0"
 
-        img_object.set_binary_value(binary_value)
+        img_object.set_binary_value(binary_string)
         return image_hash
 
-    def similar_search(self, image, images, origin):
+    def similar_search(self, image, images, origin):    #searches for similar binary_strings using the hamming distance function
         similar_images = list()
-        for index, comparator in enumerate(images):
-            if index <= origin:               
+        for index, comparator in enumerate(images):     #Linear search but ignore everything before the origin index as we sorted the list so hashes will be in order therefore binary strings will be close to each other
+            if index <= origin:
                 continue
             else:                    
-                if self.hamming_distance(image.get_binary_value(), comparator.get_binary_value()) <= 10:
+                if self.hamming_distance(image.get_binary_value(), comparator.get_binary_value()) <= 10:    #hamming distance threshold set to 8, any higher they are less similar.
                     if image.get_image_shape() == comparator.get_image_shape():
                         if image.get_image_channels() == comparator.get_image_channels():
                             if image.get_is_similar() == False:
@@ -207,7 +207,7 @@ class Hash:
 deduplicator = tk.Tk()
 deduplicator.title("UOH: Image de-duplicator")
 deduplicator.iconbitmap('idd icon.ico')
-deduplicator.geometry("1200x680")
+deduplicator.geometry("1200x700")
 #instantiate hash
 
 hasher = Hash()
