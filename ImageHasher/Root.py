@@ -163,8 +163,12 @@ class Root:
                 self.hasher.get_images().sort(key=lambda x: x.get_hash(), reverse=False)
 
                 for index, image in enumerate(self.hasher.get_images()):    #once sorted, loop through all images check it is not a duplicte (i.e checked previously) and identify duplicates where possible
-                    if  not image.get_is_duplicate():
-                        self.hasher.get_duplicates(self.hasher.images, image, index)       
+                    if self.hasher.check_similar == 0:
+                        if  not image.get_is_duplicate():
+                            self.hasher.get_duplicates(self.hasher.images, image, index)
+                    else:
+                        if not image.get_is_similar():
+                            self.hasher.similar_search(image, self.hasher.get_images(), index)
             
             if self.hasher.get_dpl_images_length() < 1:
                 tk.messagebox.showinfo("No duplicates", "No duplicates were found!")

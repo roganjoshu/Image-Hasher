@@ -11,6 +11,7 @@ class Image:
         self.image_shape = image_shape
         self.group = list()
         self.is_duplicate = False
+        self.is_similar = False
         self.image_channels = channels
         self.image_path = image_path
         self.location = location
@@ -29,6 +30,8 @@ class Image:
         return self.group
     def get_is_duplicate(self):
         return self.is_duplicate
+    def get_is_similar(self):
+        return self.is_similar
     def get_image_channels(self):
         return self.image_channels
     def get_date(self):
@@ -53,5 +56,7 @@ class Image:
         self.group.append(individual)      
     def set_is_duplicate(self, flag):
         self.is_duplicate = flag
+    def set_is_similar(self, flag):
+        self.is_similar = flag
     def set_binary_value(self, binary_value):
         self.binary_value = binary_value
