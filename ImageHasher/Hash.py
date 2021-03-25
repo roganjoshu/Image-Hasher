@@ -175,7 +175,7 @@ class Hash:
                 low = mid + 1   #search upper bounds      
         return result
 
-    def get_duplicates(self, images, image, index):     #generates range of duplicate hash values to loop through
+    def get_duplicate_range(self, images, image, index):     #generates range of duplicate hash values to loop through
         first_index = self.binary_search(hasher.images, len(hasher.images), image, True, index)   #get first occurence
         last_index = self.binary_search(hasher.images, len(hasher.images), image, False, index)   #get last occurence
         duplicates = list()
@@ -207,7 +207,7 @@ class Hash:
 deduplicator = tk.Tk()
 deduplicator.title("UOH: Image de-duplicator")
 deduplicator.iconbitmap('idd icon.ico')
-deduplicator.geometry("1200x700")
+deduplicator.geometry("1330x720")
 #instantiate hash
 
 hasher = Hash()
