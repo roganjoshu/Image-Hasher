@@ -89,7 +89,7 @@ class Hash:
                 image_shape = temp_image.shape  #gets resolution/dimensions of item
                 image_size = round((os.path.getsize(path_to_file) / 1024), 1)   #gets size of file
 
-                image_object = Image(file_name, creation_date, date_taken, image_shape, colour_channels, path_to_file, path_to_file, modified_date, image_size)   #instantiate new custom Image object
+                image_object = Image(file_name, creation_date, date_taken, image_shape, colour_channels, path_to_file, r, modified_date, image_size)   #instantiate new custom Image object
                 image_object.set_hash(hasher.hash_image(temp_image, image_object, self.check_similar))  #dHash image and store in image object
 
                 if image_object.get_hash() != 0:  #if the image has a suitable hash

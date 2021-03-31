@@ -50,65 +50,68 @@ class Root:
 
         #file path results frame
 
-        fr_results = tk.LabelFrame(self.root, text="... ")
-        fr_results.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
+        self.fr_results = tk.LabelFrame(self.root, text="... ")
+        self.fr_results.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
 
-        self.lstbx_scrllbr = tk.Scrollbar(fr_results)
+        self.lstbx_scrllbr = tk.Scrollbar(self.fr_results)
         self.lstbx_scrllbr.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
 
-        self.lstbx_results = tk.Listbox(fr_results, width=135, height=19)
+        self.lstbx_results = tk.Listbox(self.fr_results, width=135, height=19)
         self.lstbx_results.config(yscrollcommand=self.lstbx_scrllbr.set)
         self.lstbx_results.bind("<<ListboxSelect>>", lambda x: self.update_label(self.hasher))
 
         self.lstbx_scrllbr.config(command=self.lstbx_results.yview)
         self.lstbx_results.grid(columnspan=2, row=1, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_del_img = tk.Button(fr_results, text="Delete selection", command= self.del_selection)
+        self.btn_del_img = tk.Button(self.fr_results, text="Delete selection", command= self.del_selection)
         self.btn_del_img.grid(row=2, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_mov_items = tk.Button(fr_results, text = "Move items to new directory",  command=lambda:self.move_images())
-        self.btn_mov_items.grid(row=3, column=0, padx=5, pady=5, sticky="w")
+        self.btn_del_duplicates = tk.Button(self.fr_results, text="Delete all duplicates", command= self.del_selection)
+        self.btn_del_duplicates.grid(row=3, column=0, padx=5, pady=5, sticky="nw")
 
-        self.lbl_instructions = tk.Label(fr_results, text="Here you can see groups of duplicate images,"
+        self.btn_mov_items = tk.Button(self.fr_results, text = "Move duplicates a to new directory",  command=lambda:self.move_images())
+        self.btn_mov_items.grid(row=4, column=0, padx=5, pady=5, sticky="nw")
+
+        self.lbl_instructions = tk.Label(self.fr_results, text="Here you can see groups of duplicate images,"
             " select the item you wish to manage and it will appear in the 'Selected item' tab on the right.\nPlease be aware, the images identified may not be exact duplicates, review each image before taking any action.")
-        self.lbl_instructions.grid(row=4, column=0, padx=5, pady=5, sticky="nw")
+        self.lbl_instructions.grid(row=5, column=0, padx=5, pady=5, sticky="nw")
 
 
         #selected file frame
-        fr_selected_file = tk.LabelFrame(self.root, text="Selected item")
-        fr_selected_file.grid(rowspan=3, row=0, column=1, padx=5, pady=5, sticky="nw")
+        self.fr_selected_file = tk.LabelFrame(self.root, text="Selected item")
+        self.fr_selected_file.grid(rowspan=3, row=0, column=1, padx=5, pady=5, sticky="nw")
 
-        self.lbl_img_name = tk.Label(fr_selected_file, text="File name: ")
+        self.lbl_img_name = tk.Label(self.fr_selected_file, text="File name: ")
         self.lbl_img_name.grid(row=0, column=0, padx=5, pady=10, sticky="nw")
 
-        self.lbl_img_location = tk.Label(fr_selected_file, text="File path: ")
+        self.lbl_img_location = tk.Label(self.fr_selected_file, text="File path: ")
         self.lbl_img_location.grid(row=1, column=0, padx=5, pady=10, sticky="nw")
 
-        self.lbl_taken_date = tk.Label(fr_selected_file, text="Date taken: ")
+        self.lbl_taken_date = tk.Label(self.fr_selected_file, text="Date taken: ")
         self.lbl_taken_date.grid(row=2, column=0, padx=5, pady=10, sticky="nw")
 
-        self.lbl_img_creation_date = tk.Label(fr_selected_file, text="Creation date: ")
+        self.lbl_img_creation_date = tk.Label(self.fr_selected_file, text="Creation date: ")
         self.lbl_img_creation_date.grid(row=3, column=0, padx=5, pady=10, sticky="nw")
 
-        self.lbl_mod_time = tk.Label(fr_selected_file, text="Date modified: ")
+        self.lbl_mod_time = tk.Label(self.fr_selected_file, text="Date modified: ")
         self.lbl_mod_time.grid(row=4, column=0, padx=5, pady=10, sticky="nw")
 
-        self.lbl_size = tk.Label(fr_selected_file, text="Size: ")
+        self.lbl_size = tk.Label(self.fr_selected_file, text="Size: ")
         self.lbl_size.grid(row=5, column=0, padx=5, pady=10, sticky="nw")
 
-        self.lbl_img_shape = tk.Label(fr_selected_file, text="Resolution: ")
+        self.lbl_img_shape = tk.Label(self.fr_selected_file, text="Resolution: ")
         self.lbl_img_shape.grid(row=6, column=0, padx=5, pady=10, sticky="nw")
 
-        self.lbl_img_chnls = tk.Label(fr_selected_file, text="Colour channels: ")
+        self.lbl_img_chnls = tk.Label(self.fr_selected_file, text="Colour channels: ")
         self.lbl_img_chnls.grid(row=7, column=0, padx=5, pady=10, sticky="nw")
 
-        self.lbl_thumb = tk.Label(fr_selected_file, text="Image: ")
+        self.lbl_thumb = tk.Label(self.fr_selected_file, text="Image: ")
         self.lbl_thumb.grid(row=8, column=0, padx=5, pady=10, sticky="nw")
 
-        self.img_thumb = tk.Label(fr_selected_file, image=None)
+        self.img_thumb = tk.Label(self.fr_selected_file, image=None)
         self.img_thumb.grid(row=9, column=0, padx=5, pady=10, sticky="nw")
 
-        self.open_btn = tk.Button(fr_selected_file, text = "Open Image",  command=lambda:self.open_image())
+        self.open_btn = tk.Button(self.fr_selected_file, text = "Open Image",  command=lambda:self.open_image())
         self.open_btn.grid(row=10, column=0, padx=5, pady=10, sticky="nw")
 
 
@@ -187,7 +190,7 @@ class Root:
     def update_lstbx(self, hasher): #updates contents of listbox to show duplicates found.
         self.lstbx_results.delete(0, tk.END)
         group = 0
-        for img in hasher.get_dpl_images():
+        for index, img in enumerate(hasher.get_dpl_images()):
             if len(img.get_group()) > 0:
                 group += 1
                 self.lstbx_results.insert(tk.END, "------------------------------------------- Group " + str(group) + " - Items(" + str(len(img.get_group()) + 1)+") -------------------------------------------")
@@ -251,6 +254,19 @@ class Root:
                 tk.messagebox.showinfo("Operation cancelled", selected_img + " was not deleted.")
         except:
             tk.messagebox.showinfo("Error", "You have not selected an item.")
+
+    def delete_duplicates(self):
+        for image in self.hasher.get_dpl_images():
+            if len(image.get_group()) == 0:
+                confirm_deletion = tk.messagebox.askquestion("Are you sure you want to remove all duplicates? This operation cannot be reversed.")    #get input from the user confirming action
+                
+                if confirm_deletion == "yes":
+                    if os.path.exists(image.get_path()):
+                        os.remove(image.get_path())
+                        self.hasher.dpl_images.remove(image)
+                        self.hasher.images.remove(image)
+                        self.lstbx_results.delete(self.lstbx_results.get(0, tk.END).index(image.get_path()))
+                        self.lstbx_results.event_generate("<<ListboxSelect>>")
 
     def open_image(self):   #displays image in windows photo viewer so user can compare images
         try:
