@@ -1,6 +1,6 @@
 from time import time
 import tkinter as tk
-import tkinter as ttk
+from tkinter import ttk
 import tkinter.messagebox
 import PIL
 from PIL import ImageTk
@@ -127,7 +127,7 @@ class Root:
 
     def scan(self, path_to_file, hasher):   #Initates scan for images
         self.reset(hasher)
-
+        time1 = time()
         if self.full_drive_scan.get() == 1: #full drive scan
             confirm_scan = tk.messagebox.askquestion("Warning", "Scanning an entire drive is not recommended as it may identify system files necessary for software operation, you may also experience longer than usual search times. Would you like to continue?")
             
@@ -138,8 +138,11 @@ class Root:
 
         else:   #directory scan
             if len(path_to_file) != 0:
-                if os.path.exists(path_to_file):                    
+                if os.path.exists(path_to_file):
+                    scan_time1 = time()                    
                     self.hasher.scan_path(path_to_file)
+                    scan_time2 = time()
+                    print("Time taken to read images: " + str(scan_time2 - scan_time1))
 
                 else:
                     tk.messagebox.showinfo("Error", "Invalid path, please try again.")
@@ -150,6 +153,8 @@ class Root:
                 
         self.identify_duplicates()
         self.update_lstbx(self.hasher)
+        time2 = time()
+        print("Time to scan &  identify: " + str(time2 - time1))
         self.fr_results.configure(text="Possible duplicate images: " + str(len(self.hasher.get_dpl_images())))
 
     def identify_duplicates(self):  #Initiates duplicate/similar image identification
@@ -255,12 +260,12 @@ class Root:
         except:
             tk.messagebox.showinfo("Error", "You have not selected an item.")
 
-    def delete_duplicates(self):
-        for image in self.hasher.get_dpl_images():
-            if len(image.get_group()) == 0:
-                confirm_deletion = tk.messagebox.askquestion("Are you sure you want to remove all duplicates? This operation cannot be reversed.")    #get input from the user confirming action
-                
-                if confirm_deletion == "yes":
+    def delete_duplicates(self):    #deletes all duplicates from identified duplicates
+        confirm_deletion = tk.messagebox.askquestion("Are you sure you want to remove all duplicates? This operation cannot be reversed.")    #get input from the user confirming action
+
+        if confirm_deletion == "yes":
+            for image in self.hasher.get_dpl_images():
+                if len(image.get_group()) == 0:              
                     if os.path.exists(image.get_path()):
                         os.remove(image.get_path())
                         self.hasher.dpl_images.remove(image)
