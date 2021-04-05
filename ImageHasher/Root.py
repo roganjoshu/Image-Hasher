@@ -50,7 +50,7 @@ class Root:
 
         #file path results frame
 
-        self.fr_results = tk.LabelFrame(self.root, text="... ")
+        self.fr_results = tk.LabelFrame(self.root, text="Possible duplicate images: ")
         self.fr_results.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
 
         self.lstbx_scrllbr = tk.Scrollbar(self.fr_results)
@@ -66,7 +66,7 @@ class Root:
         self.btn_del_img = tk.Button(self.fr_results, text="Delete selection", command= self.del_selection)
         self.btn_del_img.grid(row=2, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_del_duplicates = tk.Button(self.fr_results, text="Delete all duplicates", command= self.del_selection)
+        self.btn_del_duplicates = tk.Button(self.fr_results, text="Delete all duplicates", command= self.delete_duplicates)
         self.btn_del_duplicates.grid(row=3, column=0, padx=5, pady=5, sticky="nw")
 
         self.btn_mov_items = tk.Button(self.fr_results, text = "Move duplicates a to new directory",  command=lambda:self.move_images())
@@ -261,17 +261,23 @@ class Root:
             tk.messagebox.showinfo("Error", "You have not selected an item.")
 
     def delete_duplicates(self):    #deletes all duplicates from identified duplicates
-        confirm_deletion = tk.messagebox.askquestion("Are you sure you want to remove all duplicates? This operation cannot be reversed.")    #get input from the user confirming action
+        confirm_deletion = tk.messagebox.askquestion("Warning!", "Are you sure you want to remove all duplicates? This operation cannot be reversed.")    #get input from the user confirming action
 
-        if confirm_deletion == "yes":
-            for image in self.hasher.get_dpl_images():
-                if len(image.get_group()) == 0:              
-                    if os.path.exists(image.get_path()):
-                        os.remove(image.get_path())
-                        self.hasher.dpl_images.remove(image)
-                        self.hasher.images.remove(image)
-                        self.lstbx_results.delete(self.lstbx_results.get(0, tk.END).index(image.get_path()))
-                        self.lstbx_results.event_generate("<<ListboxSelect>>")
+        try:
+            if confirm_deletion == "yes":
+                for image in self.hasher.get_dpl_images():
+                    if len(image.get_group()) == 0:              
+                        if os.path.exists(image.get_path()):
+                            os.remove(image.get_path())
+                            self.hasher.images.remove(image)
+                            self.lstbx_results.delete(self.lstbx_results.get(0, tk.END).index(image.get_path()))
+                    else:
+                        image.group.clear()
+        except Exception as err:
+            tk.messagebox.showinfo("Error", err)
+        
+        self.update_lstbx(self.hasher)
+        tk.messagebox.showinfo("Success", "All non-original duplicates have been removed!")
 
     def open_image(self):   #displays image in windows photo viewer so user can compare images
         try:
@@ -286,6 +292,7 @@ class Root:
         if self.lstbx_results.size() > 1:
             conf_move = tk.messagebox.askquestion("Warning!", "This will remove duplicate images from the chosen directory leaving behind one of each image."
                 " They will be moved to a new directory named IDDDuplicates located at the root directory of the specified drive. Do you wish to continue?")
+            
             if conf_move == "yes":
                 if self.full_drive_scan.get() == 1: #if user selected full drive scan get drive from logical drives
                     drive = self.drives[self.drive_var.get()] + "\\" + "IDDDuplicates"
@@ -302,6 +309,9 @@ class Root:
                 self.hasher.del_group()
                 self.update_lstbx(self.hasher)
                 self.clear_sel_lbl()
+
+                os.startfile(drive)
+
                 return
             else:
                 tk.messagebox.showinfo("Operation cancelled", "The operation has been cancelled.")
