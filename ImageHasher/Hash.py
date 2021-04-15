@@ -14,13 +14,11 @@ import py2exe
 class Hash:
     
     #Constructor
-    def __init__(self): #initialises hasher with a list of images and a list of duplicates
+    def __init__(self):
         self.images = list()
         self.dpl_images = list()
-        self.items_scanned = 0
         self.images_scanned = 0
-        self.items_excluded = 0
-        self.exceptions = ["windows", "program files", "recycle.bin", "programdata"]
+        self.exceptions = ["windows", "program files", "recycle.bin", "programdata", "iddduplicates"]
         self.file_types = [".jpg", ".png", ".jpeg", ".bmp", ".jp2", ".jpe", ".dib", ".tiff"]
         self.check_similar = False
     #getters
@@ -41,32 +39,28 @@ class Hash:
         for r, d, f in os.walk(drives[location] + "\\"):
             folder = r.split("\\", 2)[1].lower()
             if any(exception in folder for exception in self.exceptions):   #check to see if the string contains an exception
-                self.items_scanned += 1
+                continue
             else:
                 for file in f:
                     for filetype in self.file_types:
                         if file.endswith(filetype):  # no exception then check file extension
-                            self.items_scanned += 1 #increment counter and read if file extension is found
                             filepath = os.path.join(r, file)
 
                             if self.read_images(file, r):
-                                print(filepath + " has been read successfully")
                                 self.images_scanned += 1
 
     def scan_path(self, location):  #when file path is specified the method is called
         for r, d, f in os.walk(location):   #recursively walk through every dir available
             folder = r.split("\\", 2)[1].lower()    #split the string to get the drive
             if any(exception in folder for exception in self.exceptions):   #if any of the exceptions exist in folder string do nothing but increment counter
-                self.items_scanned += 1
+                continue
             else:
                 for file in f:  #if exception not in string then check to see if file is of the same type as any of the extensions in file_types
                     for filetype in self.file_types:
                         if file.endswith(filetype):
-                            self.items_scanned += 1 #increment counter and read file if the filetype is acceptable i.e. exists in the file_Types list
                             filepath = os.path.join(r, file)
 
                             if self.read_images(file, r):
-                                print(filepath + " has been read successfully")
                                 self.images_scanned += 1
 
     def read_images(self, file_name, r):   #extract data from images using CBIR   
@@ -114,7 +108,7 @@ class Hash:
         
         image_resized = cv.resize(temp_image, (hashsize + 1, hashsize)) #Image is already grayscaled, resize to 33x32
         r, c = image_resized.shape
-        pixel_difference = np.ndarray(shape=(r, c-1), dtype=bool) #initialize array same size as image resized
+        pixel_difference = np.ndarray(shape=(r, c-1), dtype=bool) #initialize array shape m x n - 1
 
         for row in range(r):
             for col in range(c-1):
@@ -157,7 +151,7 @@ class Hash:
                     hasher.dpl_images.append(image)
             hasher.dpl_images.append(similar_images[0])
         
-    def binary_search(self, images, size, image, search_first, index):   #binary search finds first occurence then checks for first and last occurence
+    def binary_search(self, images, size, image, search_first):   #binary search finds first occurence then checks for first and last occurence
         low = 0
         high = size - 1
         result = -1
@@ -175,9 +169,9 @@ class Hash:
                 low = mid + 1   #search upper bounds      
         return result
 
-    def get_duplicate_range(self, images, image, index):     #generates range of duplicate hash values to loop through
-        first_index = self.binary_search(hasher.images, len(hasher.images), image, True, index)   #get first occurence
-        last_index = self.binary_search(hasher.images, len(hasher.images), image, False, index)   #get last occurence
+    def find_duplicates(self, images, image, index):     #generates range of duplicate hash values to loop through
+        first_index = self.binary_search(hasher.images, len(hasher.images), image, True)   #get first occurence
+        last_index = self.binary_search(hasher.images, len(hasher.images), image, False)   #get last occurence
         duplicates = list()
 
         if (last_index - first_index) + 1 > 1:  #if multiple duplicates

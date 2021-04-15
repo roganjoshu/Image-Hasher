@@ -138,11 +138,8 @@ class Root:
 
         else:   #directory scan
             if len(path_to_file) != 0:
-                if os.path.exists(path_to_file):
-                    scan_time1 = time()                    
+                if os.path.exists(path_to_file):                 
                     self.hasher.scan_path(path_to_file)
-                    scan_time2 = time()
-                    print("Time taken to read images: " + str(scan_time2 - scan_time1))
 
                 else:
                     tk.messagebox.showinfo("Error", "Invalid path, please try again.")
@@ -150,11 +147,10 @@ class Root:
             else:
                 tk.messagebox.showinfo("Error","No path given, please try again.")
                 return
-                
+        
         self.identify_duplicates()
         self.update_lstbx(self.hasher)
         time2 = time()
-        print("Time to scan &  identify: " + str(time2 - time1))
         self.fr_results.configure(text="Possible duplicate images: " + str(len(self.hasher.get_dpl_images())))
 
     def identify_duplicates(self):  #Initiates duplicate/similar image identification
@@ -169,7 +165,7 @@ class Root:
             for index, image in enumerate(self.hasher.get_images()):
                 if self.hasher.check_similar == 0:  #look for duplicates
                     if  not image.get_is_duplicate():
-                        self.hasher.get_duplicate_range(self.hasher.images, image, index) 
+                        self.hasher.find_duplicates(self.hasher.images, image, index) 
 
                 else:   #look for similar images
                     if not image.get_is_similar():
@@ -195,7 +191,7 @@ class Root:
     def update_lstbx(self, hasher): #updates contents of listbox to show duplicates found.
         self.lstbx_results.delete(0, tk.END)
         group = 0
-        for index, img in enumerate(hasher.get_dpl_images()):
+        for img in hasher.get_dpl_images():
             if len(img.get_group()) > 0:
                 group += 1
                 self.lstbx_results.insert(tk.END, "------------------------------------------- Group " + str(group) + " - Items(" + str(len(img.get_group()) + 1)+") -------------------------------------------")
@@ -261,30 +257,39 @@ class Root:
             tk.messagebox.showinfo("Error", "You have not selected an item.")
 
     def delete_duplicates(self):    #deletes all duplicates from identified duplicates
-        confirm_deletion = tk.messagebox.askquestion("Warning!", "Are you sure you want to remove all duplicates? This operation cannot be reversed.")    #get input from the user confirming action
+        if self.hasher.get_dpl_images_length() > 0:
+            confirm_deletion = tk.messagebox.askquestion("Warning!", "Are you sure you want to remove all duplicates? This operation cannot be reversed.")    #get input from the user confirming action
 
-        try:
-            if confirm_deletion == "yes":
-                for image in self.hasher.get_dpl_images():
-                    if len(image.get_group()) == 0:              
-                        if os.path.exists(image.get_path()):
-                            os.remove(image.get_path())
-                            self.hasher.images.remove(image)
-                            self.lstbx_results.delete(self.lstbx_results.get(0, tk.END).index(image.get_path()))
-                    else:
-                        image.group.clear()
-        except Exception as err:
-            tk.messagebox.showinfo("Error", err)
+            try:
+                if confirm_deletion == "yes":
+                    for image in self.hasher.get_dpl_images():
+                        if len(image.get_group()) == 0:              
+                            if os.path.exists(image.get_path()):
+                                os.remove(image.get_path())
+                                self.hasher.images.remove(image)
+                                self.lstbx_results.delete(self.lstbx_results.get(0, tk.END).index(image.get_path()))
+                        else:
+                            image.group.clear()
+                    tk.messagebox.showinfo("Success", "All non-original duplicates have been removed.")
+                else:
+                    tk.messagebox.showinfo("Operation Cancelled", "The operation has been cancelled.")
+            except Exception as err:
+                tk.messagebox.showinfo("Error", err)
+            
+            self.update_lstbx(self.hasher)
+        else:
+            tk.messagebox.showinfo("Error", "No items have been found, you either have no duplicates or have not scanned a directory. Please try again.")
         
-        self.update_lstbx(self.hasher)
-        tk.messagebox.showinfo("Success", "All non-original duplicates have been removed!")
 
     def open_image(self):   #displays image in windows photo viewer so user can compare images
         try:
-            selected_index = self.lstbx_results.curselection()[0]   #get selected index
-            selected_img = self.lstbx_results.get(selected_index)   #convert index into string
-            image = PIL.Image.open(selected_img)
-            image.show(title=selected_img)
+            if self.hasher.get_dpl_images_length() > 0:
+                selected_index = self.lstbx_results.curselection()[0]   #get selected index
+                selected_img = self.lstbx_results.get(selected_index)   #convert index into string
+                image = PIL.Image.open(selected_img)
+                image.show(title=selected_img)
+            else:
+                tk.messagebox.showinfo("Error", "You have not found any duplicate images.")
         except:
             tk.messagebox.showinfo("Error", "You have not selected an image.")
 
