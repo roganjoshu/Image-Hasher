@@ -1,9 +1,8 @@
-from time import time
-import tkinter as tk
 from tkinter import ttk
+from PIL import ImageTk
+import tkinter as tk
 import tkinter.messagebox
 import PIL
-from PIL import ImageTk
 import os
 import sys
 import win32api
@@ -17,12 +16,18 @@ class Root:
         self.root = root
         self.root.grid_rowconfigure(0, weight=1)
         self.hasher = hasher
-        self.init_labels()
-        self.image_path_list = list()
+        self.init_frames()
 
-    def init_labels(self):  #draws GUI elements
+#draws GUI elements
+    def init_frames(self):
+        self.input_frame()
+        self.listbox_frame()
+        self.image_information_frame()
+
+    def input_frame(self):
+
         #user input and file path frame
-        self.fr_scan = tk.LabelFrame(self.root, text="Enter path to the folder you wish to scan")
+        self.fr_scan = tk.LabelFrame(self.root, text="Enter path to the folder you wish to scan", relief="ridge")
         self.fr_scan.grid(row=0, column=0, padx=5, pady=5, sticky="nw")
 
         self.lbl_path = tk.Label(self.fr_scan, text="Path to folder:")
@@ -39,7 +44,7 @@ class Root:
         self.chkbx_similar.grid(columnspan=2, row=2, column=0, padx=5, pady=5, sticky="nw")
 
         self.full_drive_scan = tk.IntVar()
-        self.chkbx_full = tk.Checkbutton(self.fr_scan, variable=self.full_drive_scan, text="Full Drive Scan", command=lambda:self.disable_entry())
+        self.chkbx_full = tk.Checkbutton(self.fr_scan, variable=self.full_drive_scan, text="Full Drive Scan", command=lambda:self.disable_entry_box())
         self.chkbx_full.grid(columnspan=2, row=4, column=0, padx=5, pady=5, sticky="nw")
 
         self.drive_var = tk.IntVar()
@@ -48,9 +53,10 @@ class Root:
             self.radbtn.grid(row=5+index, column=0, padx=5, pady=5, sticky="nw")
             self.radio_btns.append(self.radbtn)
 
-        #file path results frame
+    def listbox_frame(self):
+        #results frame
 
-        self.fr_results = tk.LabelFrame(self.root, text="Possible duplicate images: ")
+        self.fr_results = tk.LabelFrame(self.root, text="Possible duplicate images: ", relief="ridge")
         self.fr_results.grid(row=1, column=0, padx=5, pady=5, sticky="nw")
 
         self.lstbx_scrllbr = tk.Scrollbar(self.fr_results)
@@ -63,20 +69,20 @@ class Root:
         self.lstbx_scrllbr.config(command=self.lstbx_results.yview)
         self.lstbx_results.grid(columnspan=2, row=1, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_del_img = tk.Button(self.fr_results, text="Delete selection", command= self.del_selection)
+        self.btn_del_img = tk.Button(self.fr_results, text="Delete selection", command= lambda: self.del_selection(self.hasher))
         self.btn_del_img.grid(row=2, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_del_duplicates = tk.Button(self.fr_results, text="Delete all duplicates", command= self.delete_duplicates)
+        self.btn_del_duplicates = tk.Button(self.fr_results, text="Delete all duplicates", command= lambda: self.delete_all_duplicates(self.hasher))
         self.btn_del_duplicates.grid(row=3, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_mov_items = tk.Button(self.fr_results, text = "Move duplicates a to new directory",  command=lambda:self.move_images())
+        self.btn_mov_items = tk.Button(self.fr_results, text = "Move duplicates to a new directory",  command=lambda:self.move_images(self.hasher))
         self.btn_mov_items.grid(row=4, column=0, padx=5, pady=5, sticky="nw")
 
         self.lbl_instructions = tk.Label(self.fr_results, text="Here you can see groups of duplicate images,"
             " select the item you wish to manage and it will appear in the 'Selected item' tab on the right.\nPlease be aware, the images identified may not be exact duplicates, review each image before taking any action.")
         self.lbl_instructions.grid(row=5, column=0, padx=5, pady=5, sticky="nw")
 
-
+    def image_information_frame(self):
         #selected file frame
         self.fr_selected_file = tk.LabelFrame(self.root, text="Selected item")
         self.fr_selected_file.grid(rowspan=3, row=0, column=1, padx=5, pady=5, sticky="nw")
@@ -114,36 +120,32 @@ class Root:
         self.open_btn = tk.Button(self.fr_selected_file, text = "Open Image",  command=lambda:self.open_image())
         self.open_btn.grid(row=10, column=0, padx=5, pady=10, sticky="nw")
 
-
 #Initate scan and duplciate identification   
     def reset(self, hasher):    #resets data
         self.lstbx_results.delete(0, tk.END)    #clear listbox and images list for next 
-        self.clear_sel_lbl()
+        self.clear_image_information()
         hasher.images.clear()
-        hasher.dpl_images.clear()
-        hasher.images_scanned = 0
-        hasher.items_scanned = 0
-        self.hasher.check_similar = self.similar.get()
+        hasher.duplicate_images.clear()
+        hasher.check_for_similar_images = self.similar.get()
+        self.fr_results.configure(text="Possible duplicate images: " + str(len(hasher.duplicate_images)))
+
 
     def scan(self, path_to_file, hasher):   #Initates scan for images
         self.reset(hasher)
-        time1 = time()
-        if self.full_drive_scan.get() == 1: #full drive scan
-            confirm_scan = tk.messagebox.askquestion("Warning", "Scanning an entire drive is not recommended as it may identify system files necessary for software operation, you may also experience longer than usual search times. Would you like to continue?")
-            
+
+        #user requested full drive scan
+        if self.full_drive_scan.get() == 1:
+            confirm_scan = tk.messagebox.askquestion("Warning", "Scanning an entire drive is not recommended as it may identify system files necessary for software operation, you may also experience longer than usual search times. Would you like to continue?")      
             if confirm_scan == "yes":
                 self.hasher.scan_drive(self.drive_var.get(), self.drives)
             else:
                 return
 
-        else:   #directory scan
+        #user has given a directory
+        else:
             if len(path_to_file) != 0:
-                if os.path.exists(path_to_file):
-                    scan_time1 = time()                    
+                if os.path.exists(path_to_file):            
                     self.hasher.scan_path(path_to_file)
-                    scan_time2 = time()
-                    print("Time taken to read images: " + str(scan_time2 - scan_time1))
-
                 else:
                     tk.messagebox.showinfo("Error", "Invalid path, please try again.")
                     return
@@ -151,38 +153,41 @@ class Root:
                 tk.messagebox.showinfo("Error","No path given, please try again.")
                 return
                 
-        self.identify_duplicates()
-        self.update_lstbx(self.hasher)
-        time2 = time()
-        print("Time to scan &  identify: " + str(time2 - time1))
-        self.fr_results.configure(text="Possible duplicate images: " + str(len(self.hasher.get_dpl_images())))
+        self.identify_duplicates(hasher)
+        self.update_listbox(hasher)
+        self.fr_results.configure(text="Possible duplicate images: " + str(len(hasher.duplicate_images)))
 
-    def identify_duplicates(self):  #Initiates duplicate/similar image identification
-        if self.hasher.get_images_length() == 0:    #no images
+    def identify_duplicates(self, hasher):  #Initiates duplicate/similar image identification
+
+        #no images found
+        if len(hasher.images) == 0:
             tkinter.messagebox.showinfo("Error", "No images found, please check the directory for images and then try again.")
             return
-
-        elif self.hasher.get_images_length() > 1:   #images found
-
-            self.hasher.get_images().sort(key=lambda x: x.get_hash(), reverse=False)    #sort images based on hash value
-
-            for index, image in enumerate(self.hasher.get_images()):
-                if self.hasher.check_similar == 0:  #look for duplicates
-                    if  not image.get_is_duplicate():
-                        self.hasher.get_duplicate_range(self.hasher.images, image, index) 
-
-                else:   #look for similar images
-                    if not image.get_is_similar():
-                        self.hasher.similar_search(image, self.hasher.get_images(), index)                            
         
-        if self.hasher.get_dpl_images_length() < 1 and self.hasher.check_similar == 0:
+        #potentially found duplicate images.
+        elif len(hasher.images) > 1:
+            hasher.images.sort(key=lambda x: x.get_image_hash(), reverse=False)
+            for index, image in enumerate(hasher.images):
+
+                #look for duplicate images
+                if hasher.check_for_similar_images == 0:
+                    if  not image.get_is_duplicate():
+                        hasher.find_duplicate_images(hasher.images, image, index)
+
+                #look for similar images and duplicate images
+                else:
+                    if not image.get_is_similar():
+                        hasher.search_similar_images(image, hasher.images, index)                            
+        
+
+        if len(hasher.duplicate_images) < 1 and not hasher.check_for_similar_images:
             tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
-        elif self.hasher.get_dpl_images_length() < 1 and self.hasher.check_similar == 1:
+        elif len(hasher.duplicate_images) < 1 and hasher.check_for_similar_images:
             tk.messagebox.showinfo("No duplicates", "No similar images found!")
 
 #update, interact and modify widgets
 
-    def disable_entry(self):    #disables entry box if user decided to scan whole drive
+    def disable_entry_box(self):    #disables entry box if user decided to scan whole drive
         if self.full_drive_scan.get() == 1:
             self.entr_path.config(state='disabled')
             for btn in self.radio_btns:
@@ -192,92 +197,91 @@ class Root:
             for btn in self.radio_btns:
                 btn.config(state = 'disabled')
 
-    def update_lstbx(self, hasher): #updates contents of listbox to show duplicates found.
+    def update_listbox(self, hasher): #updates contents of listbox to show duplicates found.
         self.lstbx_results.delete(0, tk.END)
         group = 0
-        for index, img in enumerate(hasher.get_dpl_images()):
-            if len(img.get_group()) > 0:
+        for image in hasher.duplicate_images:
+            if len(image.get_group()) > 0:
                 group += 1
-                self.lstbx_results.insert(tk.END, "------------------------------------------- Group " + str(group) + " - Items(" + str(len(img.get_group()) + 1)+") -------------------------------------------")
-                self.lstbx_results.insert(tk.END, img.get_path())
-                for duplicate in img.get_group():
+                self.lstbx_results.insert(tk.END, "Group " + str(group) + " - Items(" + str(len(image.get_group()) + 1) + ")")
+                self.lstbx_results.insert(tk.END, image.get_path())
+                for duplicate in image.get_group():
                     self.lstbx_results.insert(tk.END, duplicate.get_path())
 
     def update_label(self, hasher): #updates labels in selected file frame with image data
         try:
             text = self.lstbx_results.curselection()[0]
-            img_name = self.lstbx_results.get(text)
+            selected_image_name = self.lstbx_results.get(text)
         except:
             pass
-        for image in hasher.get_images():
-            if image.get_path() == img_name:
-                img = PIL.Image.open(image.get_path())
-                img.thumbnail((512,256))
-                ph_img = ImageTk.PhotoImage(img)
-                self.lbl_img_name['text'] = "File name: " + image.get_name()
-                self.lbl_img_location['text'] = "File path: " + image.get_location()
+        for image in hasher.images:
+            if image.get_path() == selected_image_name:
+                self.lbl_img_name['text'] = "File name: " + image.get_image_name()
+                self.lbl_img_location['text'] = "File path: " + image.get_image_location()
+                self.lbl_img_creation_date['text'] = "Creation date : " + str(image.get_creation_date())
+                self.lbl_mod_time['text'] = "Date modified: " + str(image.get_modification_date())
+                self.lbl_size['text'] = "Size: " + str(image.get_image_size()) + " KB"
+                self.lbl_img_shape['text'] = "Resolution: "  + str(image.get_image_shape()[0]) + "x" + str(image.get_image_shape()[1])
+                self.lbl_img_chnls['text'] =  "Colour channels: " + str(image.get_image_channels()) 
                 if image.get_date_taken() == None:
                     self.lbl_taken_date['text'] = "Date taken: Unavailable"
                 else:
                     self.lbl_taken_date['text'] = "Date taken: " + str(image.get_date_taken())
-                self.lbl_img_creation_date['text'] = "Creation date : " + str(image.get_date())
-                self.lbl_mod_time['text'] = "Date modified: " + str(image.get_mod_date())
-                self.lbl_size['text'] = "Size: " + str(image.get_size()) + " KB"
-                self.lbl_img_shape['text'] = "Resolution: "  + str(image.get_image_shape()[0]) + " x" + str(image.get_image_shape()[1])
-                if image.get_image_channels() == "L":
-                    self.lbl_img_chnls['text'] = "Colour channels: GRAYSCALE"
-                elif image.get_image_channels() != None:
-                    self.lbl_img_chnls['text'] = "Colour channels: " + str(image.get_image_channels()) 
+                img = PIL.Image.open(image.get_path())
+                img.thumbnail((256,256))
+                ph_img = ImageTk.PhotoImage(img)
                 self.img_thumb.config(image=ph_img)
                 self.img_thumb.img = ph_img
 
-    def del_selection(self):    #identifies selection from listbox, deletes from machine and removes from listbox
+    def del_selection(self, hasher):    #identifies selection from listbox, deletes from machine and removes from listbox
         try:
             selected_index = self.lstbx_results.curselection()[0]   #get selected index
             selected_img = self.lstbx_results.get(selected_index)   #convert index into string
 
             confirm_deletion = tk.messagebox.askquestion("Delete selected item: " + selected_img + "?", 
-                "Are you sure you want to delete " + selected_img + "?" + " This operation cannot be reversed.")    #get input from the user confirming action
+                "Are you sure you want to delete " + selected_img + "?" + " This operation cannot be reversed.")
 
             if confirm_deletion == "yes":
-                for image in self.hasher.get_dpl_images():  #loop through hasher duplicate images looking for string above
-                    if image.get_path() == selected_img:    #if found, check exists in windows, remove item from windows and dynamic lists
+                for image in hasher.duplicate_images:
+                    if image.get_path() == selected_img:
                         if os.path.exists(image.get_path()):
                             os.remove(image.get_path())
-                            self.hasher.images.remove(image)
-                            try:
-                                self.hasher.dpl_images.remove(image)
-                            except:
-                                pass
+                            hasher.images.remove(image)
+                            hasher.duplicate_images.remove(image)
                             self.lstbx_results.delete(selected_index)
                             self.lstbx_results.select_set(selected_index-1)
                             self.lstbx_results.event_generate("<<ListboxSelect>>")
                             tk.messagebox.showinfo("Success", selected_img + " was deleted successfully.")
+                            if self.lstbx_results.size() == 2:
+                                self.reset(hasher)
+                                tk.messagebox.showinfo("Message", "There are no more duplicates.")
                         else:
                             tk.messagebox.showinfo("Error", "There was a problem removing the image.")
             else:
                 tk.messagebox.showinfo("Operation cancelled", selected_img + " was not deleted.")
         except:
-            tk.messagebox.showinfo("Error", "You have not selected an item.")
+            tk.messagebox.showinfo("Error", "You have not selected an image.")
 
-    def delete_duplicates(self):    #deletes all duplicates from identified duplicates
-        confirm_deletion = tk.messagebox.askquestion("Warning!", "Are you sure you want to remove all duplicates? This operation cannot be reversed.")    #get input from the user confirming action
-
-        try:
+    def delete_all_duplicates(self, hasher):    #deletes all duplicates from identified duplicates
+        #if items in listbox
+        if self.lstbx_results.size() > 1:
+            confirm_deletion = tk.messagebox.askquestion("Warning!", "Are you sure you want to remove all duplicates? This operation cannot be reversed.")
             if confirm_deletion == "yes":
-                for image in self.hasher.get_dpl_images():
+                for image in hasher.duplicate_images:
                     if len(image.get_group()) == 0:              
                         if os.path.exists(image.get_path()):
                             os.remove(image.get_path())
-                            self.hasher.images.remove(image)
+                            hasher.images.remove(image)
                             self.lstbx_results.delete(self.lstbx_results.get(0, tk.END).index(image.get_path()))
                     else:
-                        image.group.clear()
-        except Exception as err:
-            tk.messagebox.showinfo("Error", err)
-        
-        self.update_lstbx(self.hasher)
-        tk.messagebox.showinfo("Success", "All non-original duplicates have been removed!")
+                        image.duplicate_group.clear()
+
+                self.reset(hasher)
+                tk.messagebox.showinfo("Success", "All non-original duplicates have been removed!")
+            else:
+                tk.messagebox.showinfo("Operation cancelled", "The operation has been cancelled, no images have been deleted.")
+        else:
+           tk.messagebox.showinfo("Error", "No items have been found, you either have no duplicates or have not scanned a directory. Please try again.") 
 
     def open_image(self):   #displays image in windows photo viewer so user can compare images
         try:
@@ -288,37 +292,29 @@ class Root:
         except:
             tk.messagebox.showinfo("Error", "You have not selected an image.")
 
-    def move_images(self):  #move all but one duplicate from scanned directory to new directory at root of drive        
+    def move_images(self, hasher):  #move all but one duplicate from scanned directory to new directory at root of drive        
         if self.lstbx_results.size() > 1:
             conf_move = tk.messagebox.askquestion("Warning!", "This will remove duplicate images from the chosen directory leaving behind one of each image."
                 " They will be moved to a new directory named IDDDuplicates located at the root directory of the specified drive. Do you wish to continue?")
             
             if conf_move == "yes":
-                if self.full_drive_scan.get() == 1: #if user selected full drive scan get drive from logical drives
-                    drive = self.drives[self.drive_var.get()] + "\\" + "IDDDuplicates"
-                else:   #else get the drive from the path user entered at beginning
-                    path = self.entr_path.get()
-                    s = path.split("\\", 1)
-                    drive = s[0] + "\\" + "IDDDuplicates"
-                if not os.path.exists(drive):   #if path does not exist then create a new folder
-                    os.makedirs(drive)
-                for index, image in enumerate(self.hasher.get_dpl_images()):    #loop through hasher duplicate images and if the image does not have a group i.e. it is not an original move to folder
+                location = "C:\\Duplicate Images"
+                if not os.path.exists(location):   #if path does not exist then create a new folder
+                    os.makedirs(location)
+                for index, image in enumerate(hasher.duplicate_images):    #loop through hasher duplicate images and if the image does not have a group i.e. it is not an original move to folder
                     if len(image.get_group()) == 0:
-                        os.rename(image.get_path(), drive + "\\" + "dupe" + str(index) + "__" + image.get_name())
+                        os.rename(image.get_path(), location + "\\" + "duplicate" + str(index) + "__" + image.get_image_name())
+
                 tk.messagebox.showinfo("Success", "Duplicates have successfully been moved.")
-                self.hasher.del_group()
-                self.update_lstbx(self.hasher)
-                self.clear_sel_lbl()
-
-                os.startfile(drive)
-
+                self.reset(hasher)
+                os.startfile(location)
                 return
             else:
                 tk.messagebox.showinfo("Operation cancelled", "The operation has been cancelled.")
         else:
             tk.messagebox.showinfo("Error", "No items have been found, you either have no duplicates or have not scanned a directory. Please try again.")
 
-    def clear_sel_lbl(self):    #clears the selected item label when a new scan is run
+    def clear_image_information(self):    #clears the selected item label when a new scan is run
         self.lbl_img_name['text'] = "File name: "
         self.lbl_img_location['text'] = "File path: "
         self.lbl_taken_date['text'] = "Date taken: "
