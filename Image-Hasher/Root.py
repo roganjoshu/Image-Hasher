@@ -9,13 +9,13 @@ import win32api
 
 class Root:
 
-    def __init__(self, root, hasher):   #initialises GUI by drawing labels and storing reference to hasher and master window
+    def __init__(self, root, image_reader):   #initialises GUI by drawing labels and storing reference to hasher and master window
         self.drives = [x[:2] for x in win32api.GetLogicalDriveStrings().split('\x00')[:-1]]
         self.radio_btns = list()
         self.option_btns = list()
         self.root = root
         self.root.grid_rowconfigure(0, weight=1)
-        self.hasher = hasher
+        self.image_reader = image_reader
         self.init_frames()
 
 #draws GUI elements
@@ -36,7 +36,7 @@ class Root:
         self.entr_path = tk.Entry(self.fr_scan, width=113)
         self.entr_path.grid(row=0, column=1, pady=5)
 
-        self.btn_scan = tk.Button(self.fr_scan, text="Scan!", command= lambda: self.scan(self.entr_path.get(), self.hasher))
+        self.btn_scan = tk.Button(self.fr_scan, text="Scan!", command= lambda: self.scan(self.entr_path.get(), self.image_reader))
         self.btn_scan.grid(row=0, column=2, padx=5, pady=5)
 
         self.similar = tk.IntVar()
@@ -64,18 +64,18 @@ class Root:
 
         self.lstbx_results = tk.Listbox(self.fr_results, width=135, height=19)
         self.lstbx_results.config(yscrollcommand=self.lstbx_scrllbr.set)
-        self.lstbx_results.bind("<<ListboxSelect>>", lambda x: self.update_label(self.hasher))
+        self.lstbx_results.bind("<<ListboxSelect>>", lambda x: self.update_label(self.image_reader))
 
         self.lstbx_scrllbr.config(command=self.lstbx_results.yview)
         self.lstbx_results.grid(columnspan=2, row=1, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_del_img = tk.Button(self.fr_results, text="Delete selection", command= lambda: self.del_selection(self.hasher))
+        self.btn_del_img = tk.Button(self.fr_results, text="Delete selection", command= lambda: self.del_selection(self.image_reader))
         self.btn_del_img.grid(row=2, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_del_duplicates = tk.Button(self.fr_results, text="Delete all duplicates", command= lambda: self.delete_all_duplicates(self.hasher))
+        self.btn_del_duplicates = tk.Button(self.fr_results, text="Delete all duplicates", command= lambda: self.delete_all_duplicates(self.image_reader))
         self.btn_del_duplicates.grid(row=3, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_mov_items = tk.Button(self.fr_results, text = "Move duplicates to a new directory",  command=lambda:self.move_images(self.hasher))
+        self.btn_mov_items = tk.Button(self.fr_results, text = "Move duplicates to a new directory",  command=lambda:self.move_images(self.image_reader))
         self.btn_mov_items.grid(row=4, column=0, padx=5, pady=5, sticky="nw")
 
         self.lbl_instructions = tk.Label(self.fr_results, text="Here you can see groups of duplicate images,"
@@ -121,23 +121,22 @@ class Root:
         self.open_btn.grid(row=10, column=0, padx=5, pady=10, sticky="nw")
 
 #Initate scan and duplciate identification   
-    def reset(self, hasher):    #resets data
+    def reset(self, image_reader):    #resets data
         self.lstbx_results.delete(0, tk.END)    #clear listbox and images list for next 
         self.clear_image_information()
-        hasher.images.clear()
-        hasher.duplicate_images.clear()
-        hasher.check_for_similar_images = self.similar.get()
-        self.fr_results.configure(text="Possible duplicate images: " + str(len(hasher.duplicate_images)))
+        image_reader.images.clear()
+        image_reader.duplicate_images.clear()
+        image_reader.check_for_similar_images = self.similar.get()
+        self.fr_results.configure(text="Possible duplicate images: " + str(len(image_reader.duplicate_images)))
 
-
-    def scan(self, path_to_file, hasher):   #Initates scan for images
-        self.reset(hasher)
+    def scan(self, path_to_file, image_reader):   #Initates scan for images
+        self.reset(image_reader)
 
         #user requested full drive scan
         if self.full_drive_scan.get() == 1:
             confirm_scan = tk.messagebox.askquestion("Warning", "Scanning an entire drive is not recommended as it may identify system files necessary for software operation, you may also experience longer than usual search times. Would you like to continue?")      
             if confirm_scan == "yes":
-                self.hasher.scan_drive(self.drive_var.get(), self.drives)
+                self.image_reader.scan_drive(self.drive_var.get(), self.drives)
             else:
                 return
 
@@ -145,7 +144,7 @@ class Root:
         else:
             if len(path_to_file) != 0:
                 if os.path.exists(path_to_file):            
-                    self.hasher.scan_path(path_to_file)
+                    self.image_reader.scan_path(path_to_file)
                 else:
                     tk.messagebox.showinfo("Error", "Invalid path, please try again.")
                     return
@@ -153,36 +152,36 @@ class Root:
                 tk.messagebox.showinfo("Error","No path given, please try again.")
                 return
                 
-        self.identify_duplicates(hasher)
-        self.update_listbox(hasher)
-        self.fr_results.configure(text="Possible duplicate images: " + str(len(hasher.duplicate_images)))
+        self.identify_duplicates(image_reader)
+        self.update_listbox(image_reader)
+        self.fr_results.configure(text="Possible duplicate images: " + str(len(image_reader.duplicate_images)))
 
-    def identify_duplicates(self, hasher):  #Initiates duplicate/similar image identification
+    def identify_duplicates(self, image_reader):  #Initiates duplicate/similar image identification
 
         #no images found
-        if len(hasher.images) == 0:
+        if len(image_reader.images) == 0:
             tkinter.messagebox.showinfo("Error", "No images found, please check the directory for images and then try again.")
             return
         
         #potentially found duplicate images.
-        elif len(hasher.images) > 1:
-            hasher.images.sort(key=lambda x: x.get_image_hash(), reverse=False)
-            for index, image in enumerate(hasher.images):
+        elif len(image_reader.images) > 1:
+            image_reader.images.sort(key=lambda x: x.get_image_hash(), reverse=False)
+            for index, image in enumerate(image_reader.images):
 
                 #look for duplicate images
-                if hasher.check_for_similar_images == 0:
+                if image_reader.check_for_similar_images == 0:
                     if  not image.get_is_duplicate():
-                        hasher.find_duplicate_images(hasher.images, image, index)
+                        image_reader.find_duplicate_images(image_reader.images, image, index)
 
                 #look for similar images and duplicate images
                 else:
                     if not image.get_is_similar():
-                        hasher.search_similar_images(image, hasher.images, index)                            
+                        image_reader.search_similar_images(image, image_reader.images, index)                            
         
 
-        if len(hasher.duplicate_images) < 1 and not hasher.check_for_similar_images:
+        if len(image_reader.duplicate_images) < 1 and not image_reader.check_for_similar_images:
             tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
-        elif len(hasher.duplicate_images) < 1 and hasher.check_for_similar_images:
+        elif len(image_reader.duplicate_images) < 1 and image_reader.check_for_similar_images:
             tk.messagebox.showinfo("No duplicates", "No similar images found!")
 
 #update, interact and modify widgets
@@ -197,10 +196,10 @@ class Root:
             for btn in self.radio_btns:
                 btn.config(state = 'disabled')
 
-    def update_listbox(self, hasher): #updates contents of listbox to show duplicates found.
+    def update_listbox(self, image_reader): #updates contents of listbox to show duplicates found.
         self.lstbx_results.delete(0, tk.END)
         group = 0
-        for image in hasher.duplicate_images:
+        for image in image_reader.duplicate_images:
             if len(image.get_group()) > 0:
                 group += 1
                 self.lstbx_results.insert(tk.END, "Group " + str(group) + " - Items(" + str(len(image.get_group()) + 1) + ")")
@@ -208,13 +207,13 @@ class Root:
                 for duplicate in image.get_group():
                     self.lstbx_results.insert(tk.END, duplicate.get_path())
 
-    def update_label(self, hasher): #updates labels in selected file frame with image data
+    def update_label(self, image_reader): #updates labels in selected file frame with image data
         try:
             text = self.lstbx_results.curselection()[0]
             selected_image_name = self.lstbx_results.get(text)
         except:
             pass
-        for image in hasher.images:
+        for image in image_reader.images:
             if image.get_path() == selected_image_name:
                 self.lbl_img_name['text'] = "File name: " + image.get_image_name()
                 self.lbl_img_location['text'] = "File path: " + image.get_image_location()
@@ -233,7 +232,7 @@ class Root:
                 self.img_thumb.config(image=ph_img)
                 self.img_thumb.img = ph_img
 
-    def del_selection(self, hasher):    #identifies selection from listbox, deletes from machine and removes from listbox
+    def del_selection(self, image_reader):    #identifies selection from listbox, deletes from machine and removes from listbox
         try:
             selected_index = self.lstbx_results.curselection()[0]   #get selected index
             selected_img = self.lstbx_results.get(selected_index)   #convert index into string
@@ -242,18 +241,21 @@ class Root:
                 "Are you sure you want to delete " + selected_img + "?" + " This operation cannot be reversed.")
 
             if confirm_deletion == "yes":
-                for image in hasher.duplicate_images:
+                for image in image_reader.duplicate_images:
                     if image.get_path() == selected_img:
                         if os.path.exists(image.get_path()):
                             os.remove(image.get_path())
-                            hasher.images.remove(image)
-                            hasher.duplicate_images.remove(image)
+                            image_reader.images.remove(image)
+                            image_reader.duplicate_images.remove(image)
                             self.lstbx_results.delete(selected_index)
-                            self.lstbx_results.select_set(selected_index-1)
+                            if selected_index < self.lstbx_results.size():
+                                self.lstbx_results.select_set(selected_index + 1)
+                            else:
+                                self.lstbx_results.select_set(selected_index-1)
                             self.lstbx_results.event_generate("<<ListboxSelect>>")
                             tk.messagebox.showinfo("Success", selected_img + " was deleted successfully.")
                             if self.lstbx_results.size() == 2:
-                                self.reset(hasher)
+                                self.reset(image_reader)
                                 tk.messagebox.showinfo("Message", "There are no more duplicates.")
                         else:
                             tk.messagebox.showinfo("Error", "There was a problem removing the image.")
@@ -262,21 +264,21 @@ class Root:
         except:
             tk.messagebox.showinfo("Error", "You have not selected an image.")
 
-    def delete_all_duplicates(self, hasher):    #deletes all duplicates from identified duplicates
+    def delete_all_duplicates(self, image_reader):    #deletes all duplicates from identified duplicates
         #if items in listbox
         if self.lstbx_results.size() > 1:
             confirm_deletion = tk.messagebox.askquestion("Warning!", "Are you sure you want to remove all duplicates? This operation cannot be reversed.")
             if confirm_deletion == "yes":
-                for image in hasher.duplicate_images:
+                for image in image_reader.duplicate_images:
                     if len(image.get_group()) == 0:              
                         if os.path.exists(image.get_path()):
                             os.remove(image.get_path())
-                            hasher.images.remove(image)
+                            image_reader.images.remove(image)
                             self.lstbx_results.delete(self.lstbx_results.get(0, tk.END).index(image.get_path()))
                     else:
                         image.duplicate_group.clear()
 
-                self.reset(hasher)
+                self.reset(image_reader)
                 tk.messagebox.showinfo("Success", "All non-original duplicates have been removed!")
             else:
                 tk.messagebox.showinfo("Operation cancelled", "The operation has been cancelled, no images have been deleted.")
@@ -292,7 +294,7 @@ class Root:
         except:
             tk.messagebox.showinfo("Error", "You have not selected an image.")
 
-    def move_images(self, hasher):  #move all but one duplicate from scanned directory to new directory at root of drive        
+    def move_images(self, image_reader):  #move all but one duplicate from scanned directory to new directory at root of drive        
         if self.lstbx_results.size() > 1:
             conf_move = tk.messagebox.askquestion("Warning!", "This will remove duplicate images from the chosen directory leaving behind one of each image."
                 " They will be moved to a new directory named IDDDuplicates located at the root directory of the specified drive. Do you wish to continue?")
@@ -301,12 +303,12 @@ class Root:
                 location = "C:\\Duplicate Images"
                 if not os.path.exists(location):   #if path does not exist then create a new folder
                     os.makedirs(location)
-                for index, image in enumerate(hasher.duplicate_images):    #loop through hasher duplicate images and if the image does not have a group i.e. it is not an original move to folder
+                for index, image in enumerate(image_reader.duplicate_images):    #loop through hasher duplicate images and if the image does not have a group i.e. it is not an original move to folder
                     if len(image.get_group()) == 0:
                         os.rename(image.get_path(), location + "\\" + "duplicate" + str(index) + "__" + image.get_image_name())
 
                 tk.messagebox.showinfo("Success", "Duplicates have successfully been moved.")
-                self.reset(hasher)
+                self.reset(image_reader)
                 os.startfile(location)
                 return
             else:

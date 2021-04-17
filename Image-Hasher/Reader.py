@@ -9,7 +9,7 @@ import os
 import sys
 import time
 
-class Hash:
+class Reader:
     
     #Constructor
     def __init__(self): #initialises hasher with a list of images and a list of duplicates
@@ -18,7 +18,6 @@ class Hash:
         self.folder_exceptions = ["windows", "program files", "recycle.bin", "programdata"]
         self.file_type_exceptions = [".jpg", ".png", ".jpeg", ".bmp", ".jp2", ".jpe", ".dib", ".tiff"]
         self.check_for_similar_images = False
-    #getters
 
     def scan_drive(self, location, drives): #when drive scan is requested this method is called
         for r, d, f in os.walk(drives[location] + "\\"):
@@ -189,7 +188,7 @@ deduplicator.iconbitmap('idd icon.ico')
 deduplicator.geometry("1330x720")
 #instantiate hash
 
-hasher = Hash()
+image_reader = Reader()
 if __name__ == "__main__":
-    root = Root(deduplicator, hasher)
+    root = Root(deduplicator, image_reader)
     deduplicator.mainloop()
