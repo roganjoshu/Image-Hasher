@@ -12,9 +12,7 @@ class Root:
     def __init__(self, root, image_reader):   #initialises GUI by drawing labels and storing reference to hasher and master window
         self.drives = [x[:2] for x in win32api.GetLogicalDriveStrings().split('\x00')[:-1]]
         self.radio_btns = list()
-        self.option_btns = list()
         self.root = root
-        self.root.grid_rowconfigure(0, weight=1)
         self.image_reader = image_reader
         self.init_frames()
 
@@ -69,13 +67,13 @@ class Root:
         self.lstbx_scrllbr.config(command=self.lstbx_results.yview)
         self.lstbx_results.grid(columnspan=2, row=1, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_del_img = tk.Button(self.fr_results, text="Delete selection", command= lambda: self.del_selection(self.image_reader))
+        self.btn_del_img = tk.Button(self.fr_results, text="Delete selection", command= lambda: self.delete_selection(self.image_reader))
         self.btn_del_img.grid(row=2, column=0, padx=5, pady=5, sticky="nw")
 
         self.btn_del_duplicates = tk.Button(self.fr_results, text="Delete all duplicates", command= lambda: self.delete_all_duplicates(self.image_reader))
         self.btn_del_duplicates.grid(row=3, column=0, padx=5, pady=5, sticky="nw")
 
-        self.btn_mov_items = tk.Button(self.fr_results, text = "Move duplicates to a new directory",  command=lambda:self.move_images(self.image_reader))
+        self.btn_mov_items = tk.Button(self.fr_results, text = "Move duplicates to a new directory",  command=lambda:self.move_duplicate_images(self.image_reader))
         self.btn_mov_items.grid(row=4, column=0, padx=5, pady=5, sticky="nw")
 
         self.lbl_instructions = tk.Label(self.fr_results, text="Here you can see groups of duplicate images,"
@@ -161,7 +159,7 @@ class Root:
         #no images found
         if len(image_reader.images) == 0:
             tkinter.messagebox.showinfo("Error", "No images found, please check the directory for images and then try again.")
-            return
+            return False
         
         #potentially found duplicate images.
         elif len(image_reader.images) > 1:
@@ -232,7 +230,7 @@ class Root:
                 self.img_thumb.config(image=ph_img)
                 self.img_thumb.img = ph_img
 
-    def del_selection(self, image_reader):    #identifies selection from listbox, deletes from machine and removes from listbox
+    def delete_selection(self, image_reader):    #identifies selection from listbox, deletes from machine and removes from listbox
         try:
             selected_index = self.lstbx_results.curselection()[0]   #get selected index
             selected_img = self.lstbx_results.get(selected_index)   #convert index into string
@@ -294,7 +292,7 @@ class Root:
         except:
             tk.messagebox.showinfo("Error", "You have not selected an image.")
 
-    def move_images(self, image_reader):  #move all but one duplicate from scanned directory to new directory at root of drive        
+    def move_duplicate_images(self, image_reader):  #move all but one duplicate from scanned directory to new directory at root of drive        
         if self.lstbx_results.size() > 1:
             conf_move = tk.messagebox.askquestion("Warning!", "This will remove duplicate images from the chosen directory leaving behind one of each image."
                 " They will be moved to a new directory named IDDDuplicates located at the root directory of the specified drive. Do you wish to continue?")
