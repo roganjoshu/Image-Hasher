@@ -20,6 +20,7 @@ class Reader:
         self.check_for_similar_images = False
 
     def scan_drive(self, location, drives): #when drive scan is requested this method is called
+        counter = 0 
         for r, d, f in os.walk(drives[location] + "\\"):
             folder = r.split("\\", 2)[1].lower()
             if any(exception in folder for exception in self.folder_exceptions):   #check to see if the string contains an exception
@@ -31,9 +32,12 @@ class Reader:
                             filepath = os.path.join(r, file)
 
                             if self.read_images(file, r):
+                                counter += 1
                                 print(filepath + " has been read successfully")
+        print(str(counter))
 
     def scan_path(self, location):  #when file path is specified the method is called
+        counter = 0 
         for r, d, f in os.walk(location):   #recursively walk through every dir available
             folder = r.split("\\", 2)[1].lower()    #split the string to get the drive
             if any(exception in folder for exception in self.folder_exceptions):   #if any of the exceptions exist in folder string do nothing but increment counter
@@ -45,7 +49,9 @@ class Reader:
                             filepath = os.path.join(r, file)
 
                             if self.read_images(file, r):
+                                counter += 1
                                 print(filepath + " has been read successfully")
+        print(str(counter))
 
     def read_images(self, file_name, r):   #extract data from images using CBIR   
         path_to_file = r + "\\" + file_name
@@ -81,7 +87,7 @@ class Reader:
         hamming_distance = sum(char1 != char2 for char1, char2 in zip(first_bin_val, second_bin_val))
         return hamming_distance
 
-    def difference_hash(self, temp_image, img_object, similar):    #hash image using dHash. Grayscale, compare, assign
+    def difference_hash(self, temp_image, img_object, similar):    #difference hash as described by Krawetz (2013) http://www.hackerfactor.com/blog/?/archives/529-Kind-of-Like-That.html
         image_hash = 0
         binary_string = ""
 
@@ -135,7 +141,7 @@ class Reader:
                     self.duplicate_images.append(image)
             self.duplicate_images.append(similar_images[0])
         
-    def binary_search(self, images, size, image, search_first, index):   #binary search finds first occurence then checks for first and last occurence
+    def binary_search(self, images, size, image, search_first_occurence, index):   #binary search finds first occurence then checks for first and last occurence
         low = 0
         high = size - 1
         result = -1
@@ -143,7 +149,7 @@ class Reader:
             mid = int((low + high) / 2)   
             if image.get_image_hash() == self.images[mid].get_image_hash():
                 result = mid    #set mid to candidate index
-                if search_first:               
+                if search_first_occurence:               
                     high = mid - 1  #search indices left of mid
                 else:
                     low = mid + 1   #search indices right of mid

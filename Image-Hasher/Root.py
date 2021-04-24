@@ -6,6 +6,7 @@ import PIL
 import os
 import sys
 import win32api
+from time import time
 
 class Root:
 
@@ -141,7 +142,7 @@ class Root:
         #user has given a directory
         else:
             if len(path_to_file) != 0:
-                if os.path.exists(path_to_file):            
+                if os.path.exists(path_to_file):          
                     self.image_reader.scan_path(path_to_file)
                 else:
                     tk.messagebox.showinfo("Error", "Invalid path, please try again.")
@@ -174,8 +175,7 @@ class Root:
                 #look for similar images and duplicate images
                 else:
                     if not image.get_is_similar():
-                        image_reader.search_similar_images(image, image_reader.images, index)                            
-        
+                        image_reader.search_similar_images(image, image_reader.images, index)
 
         if len(image_reader.duplicate_images) < 1 and not image_reader.check_for_similar_images:
             tk.messagebox.showinfo("No duplicates", "No duplicates were found!")
