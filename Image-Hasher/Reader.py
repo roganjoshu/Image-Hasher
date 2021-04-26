@@ -89,7 +89,7 @@ class Reader:
 
     def difference_hash(self, temp_image, img_object, similar):    #difference hash as described by Krawetz (2013) http://www.hackerfactor.com/blog/?/archives/529-Kind-of-Like-That.html
         image_hash = 0
-        binary_string = ""
+        bitstring_hash = ""
 
         if similar: #if the user has requested a to look for similar photos
             hashsize = 8
@@ -110,11 +110,11 @@ class Reader:
         for index, value in enumerate(pixel_difference.flatten()):
             if value == True:
                 image_hash += 2** index  #if true add 2^index to image_hash
-                binary_string += "1"
+                bitstring_hash += "1"
             else:
-                binary_string += "0"
+                bitstring_hash += "0"
 
-        img_object.set_binary_value(binary_string)
+        img_object.set_bitstring_hash(bitstring_hash)
         return image_hash
 
     def search_similar_images(self, image, images, origin):    #searches for similar binary_strings using the hamming distance function

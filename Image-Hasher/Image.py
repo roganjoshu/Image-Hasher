@@ -17,7 +17,7 @@ class Image:
         self.image_location = image_location
         self.image_modification_date = image_modification_date
         self.image_size = image_size
-        self.binary_value = ""
+        self.bitstring_hash = ""
 
     # getters
     def get_image_name(self):
@@ -47,7 +47,7 @@ class Image:
     def get_date_taken(self):
         return self.image_taken_date
     def get_bitstring_hash(self):
-        return self.binary_value
+        return self.bitstring_hash
 
     # setters
     def set_hash(self, image_hash):
@@ -58,5 +58,5 @@ class Image:
         self.is_duplicate = flag
     def set_is_similar(self, flag):
         self.is_similar = flag
-    def set_binary_value(self, binary_value):
-        self.binary_value = binary_value
+    def set_bitstring_hash(self, bitstring_hash):
+        self.bitstring_hash = bitstring_hash
