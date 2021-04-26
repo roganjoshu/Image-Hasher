@@ -123,7 +123,7 @@ class Reader:
             if index <= origin:
                 continue
             else:                    
-                if self.hamming_distance(image.get_bitstring_hash(), comparator.get_bitstring_hash()) <= 10:    #hamming distance threshold set to 8, any higher they are less similar.
+                if self.hamming_distance(image.get_bitstring_hash(), comparator.get_bitstring_hash()) <= 8:    #hamming distance threshold set to 8, any higher they are less similar.
                     if image.get_image_shape() == comparator.get_image_shape():
                         if image.get_image_channels() == comparator.get_image_channels():
                             if image.get_is_similar() == False:
